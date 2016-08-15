@@ -1,0 +1,32 @@
+<?xml version="1.0" encoding="Windows-1252" ?>
+<TKStudioProject Name="ZL_6_Motor_Alarm_Process" BuildTool="0" ToolVer="default" Version="3.00" Author="YinHandong[Òüº®¶¬]" ProjectGUID="{B776A7D9-9618-45f8-895C-FAE41CFE043D}">
+    <Configurations>
+        <Configuration Name="Alarm" CodeMode="2" MemMode="0" RTOS="0" T51FL="0" SIMCLK="35.000000" OCM51="" OCR51="" CodeBank="0,2,0x0,0xffff," OutputDirectory=".\Alarm\" OutputName="ZL_6_Motor_Alarm_Process" GENAPP="1" GENLIB="0" ListingDirectory=".\Alarm\" OPTLT="0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0,0" OPTDBG="1,-1,1,1,1,0,()" BeforeCmp="0??0??" BeforeBuild="0??0??" AfterBuild="0??0??" DEVICE="STC15W4K32S4" VENDOR="STC" FAMINY="0">
+            <Tool Name="C51Tool" C51FL="4853008" C51VA="0" C51DEF="" C51UDF="" C51MSC="" INCC5="" />
+            <Tool Name="A51Tool" A51FL="68" A51SET="" A51RST="" A51MSC="" INCA5="" />
+            <Tool Name="Lx51Tool" LX51FL="4" LX51COB="" LX51XDB="" LX51PDB="" LX51BIB="" LX51DAB="" LX51IDB="" LX51PRC="" LX51STK="" LX51COS="" LX51XDS="" LX51BIS="" LX51DAS="" LX51IDS="" LX51OVL="" LX51MSC="" LX51DWN="" />
+            <DeviceProperties Item0="CPU=IRAM(0-0xFF) XRAM(0-0xEFF) IROM(0-0xEFF8) CLOCK(35000000) MODP2" Item1='MON=S8051.DLL TP51.DLL(&quot;-p51&quot;)' Item2='SIM=S8051.DLL DP51.DLL(&quot;-pDP8051&quot;)' Item3='SFILE=&quot;LIB\STARTUP.A51&quot; (&quot;Standard 8051 Startup Code&quot;)' Item4='REGFILE=STC15F2K60S2.H(&quot;STC&quot;)' />
+            <DeviceDescription Description="8051-based microcontroller with 1T(1-clock) High-Speed Core,&#x0D;&#x0A;Up to 62 I/O Lines, 8 Timers/Counters, 3 PCA Timers,&#x0D;&#x0A;Build-in up to 35MHz oscillator,&#x0D;&#x0A;60K bytes flash ROM, 4096 bytes data RAM,&#x0D;&#x0A;On-chip EEPROM, 4 UARTs, WDT, ISP/IAP, A/D, CCP/PWM, CMP" />
+        </Configuration>
+    </Configurations>
+    <Files>
+        <Filter Name="system">
+            <File RelativePath=".\STARTUP.A51" />
+            <File RelativePath=".\main.c" />
+            <File RelativePath="system_init.c" />
+            <File RelativePath="variable.c" />
+        </Filter>
+        <Filter Name="task">
+            <File RelativePath=".\task\alarm\alarm_task.c" />
+            <File RelativePath=".\task\doorkeep\doorkeep_task.c" />
+            <File RelativePath=".\task\status\status_task.c" />
+            <File RelativePath=".\task\uart\uart_task.c" />
+            <File RelativePath=".\task\adc\adc_task.c" />
+        </Filter>
+        <Filter Name="drive">
+            <File RelativePath=".\driver\flash\flash_drv.c" />
+            <File RelativePath=".\driver\timer\timer_drv.c" />
+            <File RelativePath=".\driver\uart\uart_drv.c" />
+        </Filter>
+    </Files>
+</TKStudioProject>

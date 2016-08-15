@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="Windows-1252" ?>
+<TKStudioOptions Version="3.00" Author="YinHandong[Òüº®¶¬]">
+    <Projects OPTPES="96,96,0,0,0,0,96,0,0,0,0,2,96,0,0,0,">
+        <Project ProjectGUID="{B776A7D9-9618-45f8-895C-FAE41CFE043D}" Name="ZL_6_Motor_Alarm_Process" ACTCFG="Alarm">
+            <TARGOPT Name="Alarm" OPTDF="0">
+                <OPTFFF VAL="&lt;.\task\adc\adc_task.c&gt; {2,3,-1,-1,225,225,1228,708,305,11085}" />
+                <OPTFFF VAL="&lt;.\variable.c&gt; {0,1,-1,-1,225,225,1228,708,39,3242}" />
+            </TARGOPT>
+        </Project>
+    </Projects>
+</TKStudioOptions>
