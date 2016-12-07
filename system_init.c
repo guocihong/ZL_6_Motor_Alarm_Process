@@ -19,6 +19,11 @@ extern xdata  Uint16      ad_still_dn;                 //静态拉力值下限
 extern xdata  Uint16      ad_still_up;                 //静态拉力值上限
 extern xdata  Byte        ad_still_Dup[13];            //报警阀值上限
 
+/* 电机堵转标志 */
+extern xdata  Byte        gl_motor_channel_number;     //用来区分是5道电机张力还是6道电机张力-->5道电机包括：4道电机、4道电机+1道级联、5道电机   6道电机包括：6道电机、4道电机+2道级联、5道电机+1道级联
+extern bdata  bit         is_motor_add_link;           //电机张力是否添加级联:0-不级联;1-级联
+extern bdata  bit         is_sample_clear;             //采样值是否清零:0-没有清零；1-已经清零
+
 void system_init(void)
 {   
 	gpio_init();
@@ -42,7 +47,7 @@ static void gpio_init(void)
     
     CLK_DIV = 0x00;       //系统时钟对主时钟不分频，主时钟来自外部晶振
     IAP_CONTR &= 0xBF;    //看门狗复位后，系统从用户程序区0000H处开始执行用户程序
-		
+    
 	//设置P0口为准双向口
 	P0M1 = 0x00;
 	P0M0 = 0x00;
@@ -263,7 +268,40 @@ static void get_config_info(void)
 	} else {	//取缺省值
 		beep_during_temp = 0;   //单位： tick
 	}
+    
+    //读RS485地址
+	temp = flash_read(EEPROM_SECTOR6);
+	if (temp == 0x5A) { //有有效设置
+        //使用软件设置的地址代替硬件拨码地址
+		gl_comm_addr = flash_read(EEPROM_SECTOR6 + 1);
+	} else {//无有效设置
+        //使用硬件拨码地址
+    }
+    
+    //读取电机张力通道数：4道电机、5道电机张力、6道电机张力
+	temp = flash_read(EEPROM_SECTOR7);
+	if (temp == 0x5A) { //有有效设置
+		gl_motor_channel_number = flash_read(EEPROM_SECTOR7 + 1);
+	} else {//无有效设置
+        gl_motor_channel_number = 5;//默认为5道电机
+    }
+    
+    //读电机张力是否添加级联
+	temp = flash_read(EEPROM_SECTOR8);
+	if (temp == 0x5A) { //有有效设置
+		is_motor_add_link = flash_read(EEPROM_SECTOR8 + 1);
+	} else {//无有效设置
+        is_motor_add_link = 0;//默认为不加级联
+    }
 
+    //读采样值是否清零
+	temp = flash_read(EEPROM_SECTOR9);
+	if (temp == 0x5A) { //有有效设置
+		is_sample_clear = flash_read(EEPROM_SECTOR9 + 1);
+	} else {//无有效设置
+        is_sample_clear = 0;//默认采样值没有清零
+    }
+    
 	//禁止Flash访问
 	flash_disable();
 }

@@ -38,7 +38,7 @@ typedef struct strAD_BASE
 #define	FRAME_STX         0x16                     // Frame header
 #define	MAX_RecvFrame     50                       // 接收缓存区大小
 #define	MAX_TransFrame    50                       // 发送缓存区大小
-#define  RECV_TIMEOUT       4                       // 字节间的最大时间间隔, 单位为tick
+#define RECV_TIMEOUT       4                       // 字节间的最大时间间隔, 单位为tick
                                             // 最小值可以为1,如果为0则表示不进行超时判定                                    
 /* state constant(仅用于接收) */                    
 #define FSA_INIT            0                       //等待帧头
@@ -56,7 +56,7 @@ typedef struct strUART_Q
   Byte  len;					            //数据包有效长度(含校验字节)
 }sUART_Q;
 
-#define UART_QUEUE_NUM      6                       //UART 队列数
+#define UART_QUEUE_NUM      7                       //UART 队列数
            
 #define bLeftSwitch         P10                     //准双向口，左开关量：0-报警；1-正常
 #define bRightSwitch        P11                     //准双向口，右开关量：0-报警；1-正常                   

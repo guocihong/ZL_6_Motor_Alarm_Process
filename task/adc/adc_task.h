@@ -9,5 +9,6 @@ void adc_task(void);
 void check_still_stress(Byte index);
 void motor_adjust(Byte index);
 void update_led_status(void);
+void update_alarm_status(void);
 
 #endif

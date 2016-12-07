@@ -3,8 +3,8 @@
 
 #include "STC15.h"
 
-#define Wdt_enable()    (WDT_CONTR = 0x36)    //直接赋值, 2.27s
-#define Wdt_refresh()   (WDT_CONTR = 0x36)    //直接赋值, 2.27s
+#define Wdt_enable()    (WDT_CONTR = 0x37)    //直接赋值, 4.5s
+#define Wdt_refresh()   (WDT_CONTR = 0x37)    //直接赋值, 4.5s
 
                          //当主频为 11.0592MHz 时
 						 //   0x31 - 使能和清除看门狗,空闲时不计数，溢出时间为142ms.

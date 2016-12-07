@@ -56,15 +56,16 @@ extern xdata  Byte     gl_ack_tick;	                //应答延时计时 tick
 /* for system */
 extern  data  Byte     gl_comm_addr;                //本模块485通信地址
 extern  data  Byte     system_status;               //系统状态
+extern xdata Byte     matrix_index[12];
 
 /* for alarm */
-extern bdata  Byte     alarm_out_flag;              //位址76543210  对应  X X X 报警2 报警1 联动输出 X X
+extern bdata  Byte     alarm_out_flag;              //位址76543210  对应  左开关量攀爬报警 右开关量攀爬报警 杆自身攀爬报警 右防区报警 左防区报警 X X X
 													//报警输出标志：位值0 - 无报警（继电器上电吸合）; 位值1 - 报警(断电)
 													//联动输出标志：位值0 - 无输出（断电,使用常闭）;  位值1 - 有联动输出(继电器上电吸合，开路)
 													//ZZX: 报警输出位值与实际硬件控制脚电平相反; 	联动输出位值与实际硬件控制脚电平相同
 
 /* for beep */
-extern xdata  Uint16   beep_during_temp;            // 预设的一次蜂鸣持续时间, 单位:tick
+extern xdata  volatile Uint16   beep_during_temp;            // 预设的一次蜂鸣持续时间, 单位:tick
 
 /* Doorkeep(门磁) */
 extern bdata  bit      gl_local_dk_status;          //门磁开关状态（每1s动态检测）: 1 - 闭合; 0 - 打开(需要报警)
@@ -72,7 +73,7 @@ extern bdata  bit      gl_control_dk_status;        //控制杆的门磁状态: 1 - 闭合
 
 /* AD sample */
 extern xdata  Uint16   ad_sensor_mask_LR;           //按左右顺序重排序的sensor mask: 杆、左开关量、左6 ~ 1,杆、右开关量、右6 ~ 1
-extern xdata  Union16  ad_chn_sample[13];           //最新一轮采样值（已均衡去噪声，每通道一个点，循环保存）
+extern xdata  Uint16   ad_chn_sample[13];           //最新一轮采样值（已均衡去噪声，每通道一个点，循环保存）
 extern xdata  sAD_BASE ad_chn_base[13];             //各通道运行时静态基准值/上下限阀值（单位：采样值）
 extern  data  Uint16   ad_alarm_exts;               //外力报警标志（无mask）： 位值 0 - 无； 1 - 超阀值
 extern  data  Uint16   ad_alarm_base;	            //静态张力报警标志（无mask）： 位值 0 - 允许范围内； 1 - 超允许范围
@@ -81,10 +82,13 @@ extern xdata  Uint16   ad_still_up;                 //静态拉力值上限
 extern xdata  Byte     ad_still_Dup[13];            //报警阀值上限
 
 /* 电机堵转标志 */
-extern bdata  bit      gl_motor_adjust_flag;        //电机是否处于工作状态：0-停止工作状态;1-正处于工作状态
+extern bdata  volatile bit      gl_motor_adjust_flag;        //电机是否处于工作状态：0-停止工作状态;1-正处于工作状态
 extern xdata  Uint16   ad_chnn_wire_cut;            //0-表示钢丝没有被剪断;1-表示钢丝被剪断 -->右6~右1、左6~左1
-
-extern xdata  Byte     test;
+extern xdata  Byte     gl_chnn_index;               //当前正在调整的钢丝的索引
+extern xdata  Byte     gl_motor_channel_number;     //用来区分是5道电机张力还是6道电机张力-->5道电机包括：4道电机、4道电机+1道级联、5道电机   6道电机包括：6道电机、4道电机+2道级联、5道电机+1道级联
+extern bdata  bit      is_motor_add_link;           //电机张力是否添加级联:0-不级联;1-级联
+extern bdata  bit      is_sample_clear;             //采样值是否清零:0-没有清零；1-已经清零
+extern xdata  Uint16   check_sample_clear_tick;     //用来检测采样值是否清零成功计时tick
 
 /* 函数声明 */
 extern void check_still_stress(Byte index);
@@ -93,6 +97,8 @@ void uart_task_init(void)
 {
 	Byte i;
 
+    check_sample_clear_tick = 0;
+    
 	//uart2相关变量初始化
 	recv2_state = FSA_INIT;
 	recv2_timer = 0;
@@ -185,14 +191,14 @@ void uart_task(void)
 							uart3_send_queue[i].tdata[4] = CMD_DADDR_aPARA;
 							uart3_send_queue[i].len = 6;
 						} else { //有有效地址,回防区状态
-							if ((alarm_out_flag & 0x18) == 0x00) { //2个防区均无报警
+							if ((alarm_out_flag & 0xF8) == 0x00) { //2个防区均无报警
 								uart3_send_queue[i].tdata[3] = 1;
 								uart3_send_queue[i].tdata[4] = CMD_ACK_OK;
 								uart3_send_queue[i].len = 6;
 							} else { //有报警
 								uart3_send_queue[i].tdata[3] = 2;
 								uart3_send_queue[i].tdata[4] = CMD_DADDR_aSTAT;
-								uart3_send_queue[i].tdata[5] = (alarm_out_flag & 0x18) >> 3;
+								uart3_send_queue[i].tdata[5] = (alarm_out_flag & 0xF8) >> 3;
 								uart3_send_queue[i].len = 7;
 							}
 						}
@@ -214,7 +220,30 @@ void uart_task(void)
 					}
 					
 					break;
-
+                    
+                case 0xE2://修改地址
+                    gl_comm_addr = ptr[4];
+                
+                    flash_enable();
+                    flash_erase(EEPROM_SECTOR6);
+                    flash_write(ptr[4], EEPROM_SECTOR6 + 1);
+                    flash_write(0x5a, EEPROM_SECTOR6);
+                    flash_disable();
+                
+                	//在UART3发送队列中找空闲Buffer
+					i = uart3_get_send_buffer();
+					if (i < UART_QUEUE_NUM) {
+						//找到了空闲buffer, 准备应答
+						uart3_send_queue[i].tdata[0] = FRAME_STX;	               //帧头
+						uart3_send_queue[i].tdata[1] = ptr[1];	                   //目的地址
+						uart3_send_queue[i].tdata[2] = gl_comm_addr;	           //源地址
+						uart3_send_queue[i].tdata[3] = 1;                          //命令长度
+						uart3_send_queue[i].tdata[4] = CMD_DADDR_aPARA;            //命令ID
+						uart3_send_queue[i].len = 6;
+					}
+                    
+                    break;
+                
 				case CMD_ZL_PRE://张力/脉冲专用命令标志
 					switch (ptr[5])
 					{
@@ -251,8 +280,8 @@ void uart_task(void)
                             
 							uart3_send_queue[i].tdata[30] = 0;                        //双/单防区
 							uart3_send_queue[i].tdata[31] = gl_comm_addr;             //拨码地址
-							uart3_send_queue[i].tdata[32] = (Byte)(((Uint32)beep_during_temp * SCHEDULER_TICK) / 1000);	//声光报警输出时间
-							uart3_send_queue[i].tdata[33] = test;       //联动输出时间
+							uart3_send_queue[i].tdata[32] = (Byte)((beep_during_temp * SCHEDULER_TICK) / 1000);	//声光报警输出时间
+							uart3_send_queue[i].tdata[33] = 0;
 							uart3_send_queue[i].len = 35;
 						}
 						
@@ -305,7 +334,7 @@ void uart_task(void)
 							uart3_send_queue[i].tdata[5] = 0x21;
 							uart3_send_queue[i].tdata[6] = 0x1C;
 							for (j = 0; j < 6; j++) { //左1~6
-								temp16 = ad_chn_sample[j].w;
+								temp16 = ad_chn_sample[j];
 								uart3_send_queue[i].tdata[7 + (j << 1)] = HIGH(temp16);
 								uart3_send_queue[i].tdata[8 + (j << 1)] = LOW(temp16);
 							}
@@ -314,12 +343,12 @@ void uart_task(void)
 							uart3_send_queue[i].tdata[20] = 0;
                             
                             //杆自身
-                            temp16 = ad_chn_sample[12].w;
+                            temp16 = ad_chn_sample[12];
 							uart3_send_queue[i].tdata[21] = HIGH(temp16);
 							uart3_send_queue[i].tdata[22] = LOW(temp16);
                             
 							for (j = 0; j < 6; j++) { //右1~6
-								temp16 = ad_chn_sample[6 + j].w;
+								temp16 = ad_chn_sample[6 + j];
 								uart3_send_queue[i].tdata[23 + (j << 1)] = HIGH(temp16);
 								uart3_send_queue[i].tdata[24 + (j << 1)] = LOW(temp16);
 							}
@@ -328,7 +357,7 @@ void uart_task(void)
 							uart3_send_queue[i].tdata[36] = 0;
                             
                             //杆自身
-                            temp16 = ad_chn_sample[12].w;
+                            temp16 = ad_chn_sample[12];
                             uart3_send_queue[i].tdata[37] = HIGH(temp16);
 							uart3_send_queue[i].tdata[38] = LOW(temp16);
                             
@@ -473,6 +502,8 @@ void uart_task(void)
 							uart2_send_queue[i].tdata[9] = ptr[8];      //运转时间
 							
 							uart2_send_queue[i].len = 11;
+                            
+                            gl_chnn_index = matrix_index[ptr[6]];
 						}
 						
 						break;
@@ -497,9 +528,35 @@ void uart_task(void)
 
 							uart2_send_queue[i].len = 40;
 						}
+                        
+////////////////////////////////////////////////////////////////////////////////////    
+                        //只有报警主机发出的采样值清零命令才会去检测采样值清零是否成功                                                    
+                        if (ptr[0] == gl_comm_addr) {
+                            temp16 = 0;
+                            for (i = 0; i < 32; i++) {
+                                temp16 += ptr[6 + i];
+                            }
+                        
+                            if (temp16 == 0) {//采样值恢复的情况
+                                is_sample_clear = 0;
+                                
+                                flash_enable();
+                                flash_erase(EEPROM_SECTOR9);
+                                flash_write(0, EEPROM_SECTOR9 + 1);
+                                flash_write(0x5a, EEPROM_SECTOR9);
+                                flash_disable();
+                            } else {//采样值清零的情况
+                                check_sample_clear_tick = 3000 / SCHEDULER_TICK;
+                            }
+                        } else if (ptr[0] == CMD_ADDR_BC) {
+                            //生产车间发出的采样值清零命令不会去检测采样值清零是否成功
+                            //什么都不做
+                        }
 						
 						break;
 
+////////////////////////////////////////////////////////////////////////////////////
+                        
 					case 0xF2: //设置采样点数---->连续采样多少个点以确定钢丝是否比较松
 						break;
 
@@ -523,6 +580,62 @@ void uart_task(void)
 							uart3_send_queue[i].len = 11;
 						}
 						break;
+                     
+                    case 0xF4: //设置电机张力通道数:4道电机、5道电机、6道电机
+                        gl_motor_channel_number = ptr[6];
+                    
+						flash_enable();
+						flash_erase(EEPROM_SECTOR7);
+						flash_write(ptr[6], EEPROM_SECTOR7 + 1);
+						flash_write(0x5a, EEPROM_SECTOR7);
+						flash_disable();
+                        break;
+                    
+                    case 0xF5: //读电机张力通道数
+                        //在UART3队列中找空闲Buffer
+						i = uart3_get_send_buffer();
+						if (i < UART_QUEUE_NUM) {
+							//找到了空闲buffer, 写入data
+							uart3_send_queue[i].tdata[0] = FRAME_STX;
+							uart3_send_queue[i].tdata[1] = ptr[1];	            //目的地址
+							uart3_send_queue[i].tdata[2] = gl_comm_addr;	    //源地址
+							uart3_send_queue[i].tdata[3] = 0x04;
+							uart3_send_queue[i].tdata[4] = CMD_ZL_PRE;
+							uart3_send_queue[i].tdata[5] = 0x02;
+							uart3_send_queue[i].tdata[6] = 0x1F;
+                            uart3_send_queue[i].tdata[7] = gl_motor_channel_number;
+							
+							uart3_send_queue[i].len = 9;
+						}
+                        break;
+                        
+                    case 0xF6: //设置电机张力是否添加级联
+                        is_motor_add_link = ptr[6];
+                        
+                    	flash_enable();
+						flash_erase(EEPROM_SECTOR8);
+						flash_write(ptr[6], EEPROM_SECTOR8 + 1);
+						flash_write(0x5a, EEPROM_SECTOR8);
+						flash_disable();
+                        break;
+                    
+                    case 0xF7: //读电机张力是否添加级联
+                        //在UART3队列中找空闲Buffer
+						i = uart3_get_send_buffer();
+						if (i < UART_QUEUE_NUM) {
+							//找到了空闲buffer, 写入data
+							uart3_send_queue[i].tdata[0] = FRAME_STX;
+							uart3_send_queue[i].tdata[1] = ptr[1];	            //目的地址
+							uart3_send_queue[i].tdata[2] = gl_comm_addr;	    //源地址
+							uart3_send_queue[i].tdata[3] = 0x04;
+							uart3_send_queue[i].tdata[4] = CMD_ZL_PRE;
+							uart3_send_queue[i].tdata[5] = 0x02;
+							uart3_send_queue[i].tdata[6] = 0x20;
+                            uart3_send_queue[i].tdata[7] = (Byte)is_motor_add_link;
+							
+							uart3_send_queue[i].len = 9;
+						}
+                        break;
 					}
 					break;
 				}

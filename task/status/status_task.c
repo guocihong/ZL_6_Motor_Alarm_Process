@@ -21,7 +21,7 @@ void status_task(void)
 	{
 	case  SYS_PowerON://³õÊ¼ÉÏµç
 		Disable_interrupt();
-		gl_delay_tick = 0;
+		gl_delay_tick = DLY_BF_GetBase;
 		Enable_interrupt();
 		system_status = SYS_B5S;
 		break;
@@ -30,7 +30,7 @@ void status_task(void)
 		Disable_interrupt();
 		temp16 = gl_delay_tick;
 		Enable_interrupt();
-		if (temp16 > DLY_BF_GetBase) {
+		if (temp16 == 0) {
 			system_status = SYS_SAMP_BASE;
 		}
 		break;

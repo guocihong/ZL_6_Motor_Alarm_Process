@@ -53,7 +53,7 @@ xdata  Uint16      ad_sensor_mask_LR;           //按左右顺序重排序的sen
 xdata  Uint16      ad_sensor_mask;              //15  14  13  12  11  10  9  8  7   6    5  4  3  2  1  0
 												//				  右6			   右1  左6       	   左1	
 
-xdata  Union16     ad_chn_sample[13];           //最新一轮采样值（已均衡去噪声，每通道一个点，循环保存）- 从左至右的顺序为：左1~6、右1~6、杆自身
+xdata  Uint16      ad_chn_sample[13];           //最新一轮采样值（已均衡去噪声，每通道一个点，循环保存）- 从左至右的顺序为：左1~6、右1~6、杆自身
 xdata  Uint16      ad_samp_pnum;                //采样点数(计算静态基准值时总采样点数)
 xdata  sAD_Sum     ad_samp_sum[13];             //阶段求和 - 从左至右的顺序为：左1~6、右1~6、杆自身
 xdata  sAD_BASE    ad_chn_base[13];             //各通道运行时静态基准值/上下限阀值（单位：采样值）- 从左至右的顺序为：左1~6、右1~6、杆自身
@@ -64,6 +64,10 @@ xdata  Byte        ad_chn_over[13];             //各通道连续采样点(均�
 xdata  Uint16      ad_still_dn;                 //静态拉力值下限
 xdata  Uint16      ad_still_up;                 //静态拉力值上限
 xdata  Byte        ad_still_Dup[13];            //报警阀值上限 - 从左至右的顺序为：左1~6、右1~6、杆自身
+
+bdata  bit         zs_climb_alarm_flag;         //杆自身攀爬报警标志：0-无报警；1-报警
+bdata  bit         right_climb_alarm_flag;      //右开关量攀爬报警标志：0-无报警；1-报警
+bdata  bit         left_climb_alarm_flag;       //左开关量攀爬报警标志：0-无报警；1-报警
  data  Uint16      ad_alarm_exts;               //外力报警标志（未经mask）：位值 0 - 无； 1 - 超阀值                    
  data  Uint16      ad_alarm_base;	            //静态张力报警标志（未经mask）：位值 0 - 允许范围内； 1 - 超允许范围                                   					
 												//从左至右的顺序为：杆自身、左开关量、左6~左1,杆自身、右开关量、右6~右1
@@ -86,20 +90,26 @@ xdata  Byte        gl_ack_tick = 0;	            //上位机485口应答延时计
 xdata  Uint16      gl_delay_tick;               //通用延时用tick
  
 /* for alarm */
-bdata  Byte        alarm_out_flag;              //位址76543210  对应  X X X 报警2 报警1 联动输出 X X
+bdata  Byte        alarm_out_flag;              //位址76543210  对应  左开关量攀爬报警 右开关量攀爬报警 杆自身攀爬报警 右防区报警 左防区报警 X X X
                                                 //报警输出标志：位值0 - 无报警（继电器上电吸合）; 位值1 - 报警(断电)
                                                 //联动输出标志：位值0 - 无输出（断电,使用常闭）;  位值1 - 有联动输出(继电器上电吸合，开路) 
 								                //ZZX: 报警输出位值与实际硬件控制脚电平相反; 	联动输出位值与实际硬件控制脚电平相同							
-sbit     alarm2_flag  = alarm_out_flag^4;
-sbit     alarm1_flag  = alarm_out_flag^3;
-	   
- data  Uint16      alarm1_timer;                //计时器，报警器1已报警时间,单位:tick 
- data  Uint16      alarm2_timer;                //计时器，报警器2已报警时间,单位:tick 
- 
+ sbit  alarm1_flag  = alarm_out_flag^3;         //左防区报警
+ sbit  alarm2_flag  = alarm_out_flag^4;         //右防区报警
+ sbit  alarm3_flag  = alarm_out_flag^5;         //杆自身攀爬报警
+ sbit  alarm4_flag  = alarm_out_flag^6;         //右开关量攀爬报警
+ sbit  alarm5_flag  = alarm_out_flag^7;         //左开关量攀爬报警
+
+ data  Uint16      alarm1_timer;                //计时器，左防区已报警时间,单位:tick 
+ data  Uint16      alarm2_timer;                //计时器，右防区已报警时间,单位:tick 
+ data  Uint16      alarm3_timer;                //计时器，杆自身攀爬报警已报警时间,单位:tick 
+ data  Uint16      alarm4_timer;                //计时器，右开关量攀爬报警已报警时间,单位:tick 
+ data  Uint16      alarm5_timer;                //计时器，左开关量攀爬报警已报警时间,单位:tick 
+
 /* variables for beep */
 bdata  bit         beep_flag;                   //蜂鸣标志: 0 - 禁鸣; 1 - 正在蜂鸣
  data  Uint16      beep_timer;                  //计时器，剩余蜂鸣时间, 单位:tick
-xdata  Uint16      beep_during_temp;            //预设的一次蜂鸣持续时间, 单位:tick 
+xdata  volatile Uint16      beep_during_temp;            //预设的一次蜂鸣持续时间, 单位:tick 
 
 /* Doorkeep(门磁) */
 bdata  bit         gl_control_dk_status;        //控制杆门磁状态： 1 - 闭合; 0 - 打开(需要报警)   
@@ -115,12 +125,16 @@ xdata  Uint16      ad_alarm_tick[13];           //各通道报警计时tick
  
 /* 电机堵转检测 */
 bdata  bit         gl_motor_overcur_flag;       //电机是否处于堵转状态：0-正常工作;1-电机堵转
-bdata  bit         gl_motor_adjust_flag;        //电机是否处于工作状态：0-停止工作状态;1-正处于工作状态
+bdata  volatile bit         gl_motor_adjust_flag;        //电机是否处于工作状态：0-停止工作状态;1-正处于工作状态
 bdata  bit         is_timeout;                  //电机时间是否用完：0-没有;1-时间用完			
 xdata  Byte        gl_chnn_index;               //当前正在调整的钢丝的索引
 xdata  Byte        gl_motor_overcur_point[12];  //电机堵转次数
 xdata  Byte        gl_motor_adjust_end[12];     //是否调整完成：0-没有调整完成;1-表示调整完成
 xdata  Uint16      ad_chnn_wire_cut;            //0-表示钢丝没有被剪断;1-表示钢丝被剪断 -->X X 左6~左1、X X 右6~右1
 xdata  Byte        gl_wait_delay_tick;          //发出控制电机命令包以后延时等待的时间，然后才同步更新基准值以及是否电机堵转和时间是否用完
-
-xdata  Byte        test;
+xdata  Byte        gl_5_motor_control_code[12] = {0x02,0x01,0x01,0x02,0x02,0x01,0x01,0x02,0x01,0x02,0x01,0x02};//左1、右1、左2、右2、左3、右3、左4、右4、左5、右5
+xdata  Byte        gl_6_motor_control_code[12] = {0x02,0x01,0x01,0x02,0x02,0x01,0x01,0x02,0x02,0x01,0x01,0x02};//左1、右1、左2、右2、左3、右3、左4、右4、左5、右5、左6、右6
+xdata  Byte        gl_motor_channel_number;     //用来区分是5道电机张力还是6道电机张力-->5道电机包括：4道电机、4道电机+1道级联、5道电机   6道电机包括：6道电机、4道电机+2道级联、5道电机+1道级联
+bdata  bit         is_motor_add_link;           //电机张力是否添加级联:0-不级联;1-级联
+bdata  bit         is_sample_clear;             //采样值是否清零:0-没有清零；1-已经清零
+xdata  Uint16      check_sample_clear_tick;     //用来检测采样值是否清零成功计时tick

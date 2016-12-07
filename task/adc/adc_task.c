@@ -9,7 +9,7 @@ extern xdata  Uint16   ad_sensor_mask_LR;              //°´×óÓÒË³ĞòÖØÅÅĞòµÄsenso
 extern xdata  Uint16   ad_sensor_mask;                 //15  14  13  12  11  10  9  8  7   6   5  4  3  2  1  0
 											           //				ÓÒ6			      ÓÒ1 ×ó6       	 ×ó1	
 
-extern xdata  Union16  ad_chn_sample[13];              //×îĞÂÒ»ÂÖ²ÉÑùÖµ£¨ÒÑ¾ùºâÈ¥ÔëÉù£¬Ã¿Í¨µÀÒ»¸öµã£¬Ñ­»·±£´æ£©
+extern xdata  Uint16   ad_chn_sample[13];              //×îĞÂÒ»ÂÖ²ÉÑùÖµ£¨ÒÑ¾ùºâÈ¥ÔëÉù£¬Ã¿Í¨µÀÒ»¸öµã£¬Ñ­»·±£´æ£©
 extern xdata  Uint16   ad_samp_pnum;                   //²ÉÑùµãÊı(¼ÆËã¾²Ì¬»ù×¼ÖµÊ±×Ü²ÉÑùµãÊı)
 extern xdata  sAD_Sum  ad_samp_sum[13];                //½×¶ÎÇóºÍ
 extern xdata  sAD_BASE ad_chn_base[13];                //¸÷Í¨µÀÔËĞĞÊ±¾²Ì¬»ù×¼Öµ/ÉÏÏÂÏŞ·§Öµ£¨µ¥Î»£º²ÉÑùÖµ£©
@@ -26,30 +26,35 @@ extern xdata  Uint16   ad_chnn_state[12];              //ÓÃÀ´·ÖÎö¸ÖË¿µÄËÉ½ô³Ì¶È£
 static xdata  Byte     md_point[13];                   //ÓÃÓÚ»ù×¼Öµ¸ú×ÙµÄ¼ÆÁ¿µãÊı
 
 /* for system */
-extern data  Byte     system_status;                   //ÏµÍ³×´Ì¬
-extern xdata Byte     matrix_index[12];
+extern  data Byte      system_status;                   //ÏµÍ³×´Ì¬
+extern xdata Byte      matrix_index[12];
 
 /* variables for alarm output */
+extern bdata  bit      zs_climb_alarm_flag;            //¸Ë×ÔÉíÅÊÅÀ±¨¾¯±êÖ¾£º0-ÎŞ±¨¾¯£»1-±¨¾¯
+extern bdata  bit      right_climb_alarm_flag;         //ÓÒ¿ª¹ØÁ¿ÅÊÅÀ±¨¾¯±êÖ¾£º0-ÎŞ±¨¾¯£»1-±¨¾¯
+extern bdata  bit      left_climb_alarm_flag;          //×ó¿ª¹ØÁ¿ÅÊÅÀ±¨¾¯±êÖ¾£º0-ÎŞ±¨¾¯£»1-±¨¾¯
 extern bdata  bit      adl_alarm_flag;                 //×ó²àÕÅÁ¦×éºÏ±¨¾¯±êÖ¾: 0 - ÎŞ±¨¾¯; 1 - ³¬·§Öµ£¬±¨¾¯
 extern bdata  bit      adr_alarm_flag;                 //ÓÒ²àÕÅÁ¦×éºÏ±¨¾¯±êÖ¾: 0 - ÎŞ±¨¾¯; 1 - ³¬·§Öµ£¬±¨¾¯
-                                                       //  ±¨¾¯Ô­Òò¿ÉÄÜÎª£ºÍâÁ¦±¨¾¯£¬ ¾²Ì¬ÕÅÁ¦³¬·¶Î§±¨¾¯
-                                                       //  ZZX: ÒÑ¾­¹ı mask ´¦Àí, Î´º¬ÃÅ´Å×´Ì¬
 extern xdata  Uint16   ad_alarm_tick[13];              //¸÷Í¨µÀ±¨¾¯¼ÆÊ±tick
 
 /* µç»ú¶Â×ª±êÖ¾ */
 extern bdata  bit      gl_motor_overcur_flag;          //µç»úÊÇ·ñ´¦ÓÚ¶Â×ª×´Ì¬£º0-Õı³£¹¤×÷;1-µç»ú¶Â×ª
-extern bdata  bit      gl_motor_adjust_flag;           //µç»úÊÇ·ñ´¦ÓÚ¹¤×÷×´Ì¬£º0-Í£Ö¹¹¤×÷×´Ì¬;1-Õı´¦ÓÚ¹¤×÷×´Ì¬
+extern bdata  volatile bit      gl_motor_adjust_flag;           //µç»úÊÇ·ñ´¦ÓÚ¹¤×÷×´Ì¬£º0-Í£Ö¹¹¤×÷×´Ì¬;1-Õı´¦ÓÚ¹¤×÷×´Ì¬
 extern bdata  bit      is_timeout;                     //µç»úÊ±¼äÊÇ·ñÓÃÍê£º0-Ã»ÓĞ;1-Ê±¼äÓÃÍê			
 extern xdata  Byte     gl_chnn_index;                  //µ±Ç°ÕıÔÚµ÷ÕûµÄ¸ÖË¿µÄË÷Òı
 extern xdata  Byte     gl_motor_overcur_point[12];     //µç»ú¶Â×ª´ÎÊı
 extern xdata  Byte     gl_motor_adjust_end[12];        //ÊÇ·ñµ÷ÕûÍê³É£º0-Ã»ÓĞµ÷ÕûÍê³É;1-±íÊ¾µ÷ÕûÍê³É
 extern xdata  Uint16   ad_chnn_wire_cut;               //0-±íÊ¾¸ÖË¿Ã»ÓĞ±»¼ô¶Ï;1-±íÊ¾¸ÖË¿±»¼ô¶Ï -->ÓÒ6~ÓÒ1¡¢×ó6~×ó1
 extern xdata  Byte     gl_wait_delay_tick;             //·¢³ö¿ØÖÆµç»úÃüÁî°üÒÔºóÑÓÊ±µÈ´ıµÄÊ±¼ä£¬È»ºó²ÅÍ¬²½¸üĞÂ»ù×¼ÖµÒÔ¼°ÊÇ·ñµç»ú¶Â×ªºÍÊ±¼äÊÇ·ñÓÃÍê
+extern xdata  Byte     gl_5_motor_control_code[12];    //×ó1¡¢ÓÒ1¡¢×ó2¡¢ÓÒ2¡¢×ó3¡¢ÓÒ3¡¢×ó4¡¢ÓÒ4¡¢×ó5¡¢ÓÒ5
+extern xdata  Byte     gl_6_motor_control_code[12];    //×ó1¡¢ÓÒ1¡¢×ó2¡¢ÓÒ2¡¢×ó3¡¢ÓÒ3¡¢×ó4¡¢ÓÒ4¡¢×ó5¡¢ÓÒ5¡¢×ó6¡¢ÓÒ6
+extern xdata  Byte     gl_motor_channel_number;        //ÓÃÀ´Çø·ÖÊÇ5µÀµç»úÕÅÁ¦»¹ÊÇ6µÀµç»úÕÅÁ¦-->5µÀµç»ú°üÀ¨£º4µÀµç»ú¡¢4µÀµç»ú+1µÀ¼¶Áª¡¢5µÀµç»ú   6µÀµç»ú°üÀ¨£º6µÀµç»ú¡¢4µÀµç»ú+2µÀ¼¶Áª¡¢5µÀµç»ú+1µÀ¼¶Áª
+extern bdata  bit      is_motor_add_link;              //µç»úÕÅÁ¦ÊÇ·ñÌí¼Ó¼¶Áª:0-²»¼¶Áª;1-¼¶Áª
+extern bdata  bit      is_sample_clear;                //²ÉÑùÖµÊÇ·ñÇåÁã:0-Ã»ÓĞÇåÁã£»1-ÒÑ¾­ÇåÁã
 
 /* Doorkeep(ÃÅ´Å) */
 extern bdata  bit      gl_control_dk_status;           //¿ØÖÆ¸ËµÄÃÅ´Å×´Ì¬: 1 - ±ÕºÏ; 0 - ´ò¿ª(ĞèÒª±¨¾¯)                    				
 
-extern xdata  Byte        test;
 /* º¯ÊıÉùÃ÷*/
 extern Byte uart2_get_send_buffer(void);
 
@@ -61,7 +66,7 @@ void adc_task_init(void)
 	ad_samp_pnum    = 0;                     //²ÉÑùµãÊı(¼ÆËã¾²Ì¬»ù×¼ÖµÊ±×Ü²ÉÑùµãÊı)
 	for (i = 0; i < 13; i++)
 	{
-		ad_chn_sample[i].w       = 0;        //×îĞÂÒ»ÂÖ²ÉÑùÖµ
+		ad_chn_sample[i]       = 0;        //×îĞÂÒ»ÂÖ²ÉÑùÖµ
 		ad_samp_sum[i].sum       = 0;        //½×¶ÎÇóºÍ
 		ad_samp_sum[i].point     = 0;
 		ad_chn_base[i].base      = 0;        //¸÷Í¨µÀ¾²Ì¬»ù×¼Öµ/ÉÏÏÂÏŞ·§Öµ
@@ -78,11 +83,14 @@ void adc_task_init(void)
 		ad_chnn_state[i]          = 0;
 	}
 
+    zs_climb_alarm_flag    = 0;
+    right_climb_alarm_flag = 0;
+    left_climb_alarm_flag  = 0;
+    
 	ad_alarm_exts    = 0;                    //ÍâÁ¦±¨¾¯±êÖ¾£¨ÎŞmask£©: ÎŞ
 	ad_alarm_base    = 0;                    //¾²Ì¬ÕÅÁ¦±¨¾¯±êÖ¾£¨ÎŞmask£©£ºÔÊĞí·¶Î§ÄÚ
 	gl_chnn_index    = 0;                    //´Ó×ó1¿ªÊ¼
-	ad_chnn_wire_cut = 0;
-	test = 10;
+	ad_chnn_wire_cut = 0;   
 }
 
 void adc_task(void)
@@ -91,10 +99,11 @@ void adc_task(void)
     Byte isValidData = 0;
 	Uint16 val_temp;
     Byte val_sum;
-	Byte temp;
 	Uint16 val;
 	Byte index;
-	
+    Byte temp_index;
+    Byte k;
+    
 	//1.´¦ÀíUART2£ºÀ´×Ô¿ØÖÆ¸ËµÄÊı¾İ°ü
 	//ÕÒÊÇ·ñÓĞµÈ´ı´¦ÀíµÄÏî
 	for (i = 0; i < UART_QUEUE_NUM; i++)
@@ -105,7 +114,7 @@ void adc_task(void)
 						
 			//×ó1~6,ÓÒ1~6,¸Ë×ÔÉíµÄË²¼äÕÅÁ¦Öµ
 			for (j = 0; j < 13; j++) {
-				ad_chn_sample[j].w = ((Uint16)uart2_recv_queue[i].tdata[6 + (j << 1)] << 8) + uart2_recv_queue[i].tdata[7 + (j << 1)];
+				ad_chn_sample[j] = ((Uint16)(uart2_recv_queue[i].tdata[6 + (j << 1)]) << 8) + uart2_recv_queue[i].tdata[7 + (j << 1)];
 			}
 			
 			//¿ØÖÆ¸ËµÄÃÅ´Å×´Ì¬
@@ -119,7 +128,7 @@ void adc_task(void)
 				
 			//Ê±¼äÊÇ·ñÓÃÍê
 			is_timeout             = uart2_recv_queue[i].tdata[35];//0-Ã»ÓĞ;1-Ê±¼äÓÃÍê
-			
+            
 			//´¦ÀíÍê³É,ÊÍ·Å¸Ã¶ÓÁĞÏî
 			uart2_recv_queue[i].flag = 0;
 
@@ -127,15 +136,16 @@ void adc_task(void)
 		}
 	}
 
+
     if (isValidData == 0) {//Ã»ÓĞµÈ´ı´¦ÀíµÄÏî
         return;
     }
-    
+       
 	switch (system_status)
 	{
 	case SYS_SAMP_BASE: //³õÊ¼ÉÏµçÊ±µÄ¾²Ì¬»ù×¼Öµ²ÉÑù        
 		for (i = 0; i < 13; i++) {
-			ad_samp_sum[i].sum += ad_chn_sample[i].w;
+			ad_samp_sum[i].sum += ad_chn_sample[i];
 		}
 		ad_samp_pnum++;
 		
@@ -151,7 +161,8 @@ void adc_task(void)
 
 				//ÏÂÏŞ = »ù×¼ * £¨1 / 3£©
 				val_temp = ad_chn_base[i].base;
-				ad_chn_base[i].base_down = val_temp / 3;
+				ad_chn_base[i].base_down = (val_temp >> 1) - (val_temp >> 3) - (val_temp >> 4);
+                //ad_chn_base[i].base_down = val_temp - ad_still_Dup[i] * 2;
 
 				//ÉÏÏŞ
 				if ((1023 - ad_chn_base[i].base) > ad_still_Dup[i])
@@ -177,21 +188,55 @@ void adc_task(void)
 
 			//¸üĞÂled×´Ì¬
 			update_led_status();
+
+			//¸üĞÂ×éºÏ±¨¾¯±êÖ¾
+			update_alarm_status();
 		
 			//×´Ì¬->¿ª»ú×Ô¼ì
 			system_status = SYS_SELF_CHECK1;
 		}
         
 		break;
-		
+
 	case SYS_SELF_CHECK1://¿ª»ú×Ô¼ì½×¶Î1-->×ó1 ÓÒ1 ×ó2 ÓÒ2 ... ×ó6 ÓÒ6
+        if((is_motor_add_link == 1) && (is_sample_clear == 0)){
+            //¼Ó¼¶ÁªµÄÇé¿öÏÂ£¬±ØĞëÒªµÈµ½²ÉÑùÖµÇåÁãÖ®ºó²Å»á×Ô¶¯ÊÕ½ô¸ÖË¿
+            //²»¼Ó¼¶ÁªµÄÇé¿öÏÂ£¬Ö÷»úÒ»ÉÏµç£¬¾Í»á×Ô¶¯ÊÕ½ô¸ÖË¿
+            
+            //Á¢¼´Í¬²½¸üĞÂ¾²Ì¬»ù×¼Öµ
+            for (k = 0; k < 12; k++) {
+            	ad_chn_base[k].base = ad_chn_sample[k];
+                val_temp = ad_chn_base[k].base;
+                ad_chn_base[k].base_down = (val_temp >> 1) - (val_temp >> 3) - (val_temp >> 4);
+                if ((1023 - ad_chn_base[k].base) > ad_still_Dup[k]) {
+                    ad_chn_base[k].base_up = ad_chn_base[k].base + ad_still_Dup[k];
+                } else {
+                    ad_chn_base[k].base_up = 1023;
+                }
+                
+                //¼ì²é¾²Ì¬ÕÅÁ¦ÊÇ·ñÔÚÔÊĞí·¶Î§ÄÚ
+                //Ö»ÓĞ×ó6µÀ¸ÖË¿ºÍÓÒ6µÀ¸ÖË¿²ÅĞèÒªÅĞ¶ÏÊÇ·ñ¾²Ì¬±¨¾¯,¸Ë×ÔÉí²»´æÔÚ¾²Ì¬±¨¾¯,¸Ë×ÔÉíÖ»ÓĞÍâÁ¦±¨¾¯
+                check_still_stress(k);
+            }
+            
+            gl_chnn_index = 0;
+            
+            //¸üĞÂled×´Ì¬
+            update_led_status();
+            
+            //¸üĞÂ×éºÏ±¨¾¯±êÖ¾
+            update_alarm_status();
+            
+            return;
+        }
+        
 		//gl_chnn_indexÈ¡Öµ·¶Î§Îª0~11£¬·Ö±ğÒÀ´Î¶ÔÓ¦Îª£º×ó1 ÓÒ1 ×ó2 ÓÒ2 ... ×ó6 ÓÒ6
 		//ad_chn_sample/ad_chn_baseµÄ0~5¶ÔÓ¦×ó1~×ó6,6~11¶ÔÓ¦ÓÒ1~ÓÒ6£¬ËùÒÔĞèÒª×ª»»Ò»ÏÂË÷Òı
 		index = matrix_index[gl_chnn_index];
 		         						
 		//ÅĞ¶Ï²¦Âë¿ª¹ØÊÇ·ñ´ò¿ª
 		if ((ad_sensor_mask >> index) & 0x0001) {//²¦Âë´ò¿ª
-			if (ad_chn_sample[index].w < 100) {//¸ÖË¿±È½ÏËÉ
+			if (ad_chn_sample[index] < 100) {//¸ÖË¿±È½ÏËÉ
 				system_status = SYS_SELF_CHECK2;
 				gl_motor_adjust_flag  = 0;
 				gl_motor_overcur_flag = 0;
@@ -240,9 +285,10 @@ void adc_task(void)
 		index = matrix_index[gl_chnn_index];
 		if (gl_motor_adjust_flag == 1) {//µç»úÕıÔÚÔË×ª
 			//Á¢¼´Í¬²½¸üĞÂ¾²Ì¬»ù×¼Öµ
-			ad_chn_base[index].base = ad_chn_sample[index].w;
+			ad_chn_base[index].base = ad_chn_sample[index];
 			val_temp = ad_chn_base[index].base;
-			ad_chn_base[index].base_down = val_temp / 3;
+			ad_chn_base[index].base_down = (val_temp >> 1) - (val_temp >> 3) - (val_temp >> 4);
+            //ad_chn_base[index].base_down = val_temp - ad_still_Dup[index] * 2;
 			if ((1023 - ad_chn_base[index].base) > ad_still_Dup[index]) {
 				ad_chn_base[index].base_up = ad_chn_base[index].base + ad_still_Dup[index];
 			} else {
@@ -256,6 +302,9 @@ void adc_task(void)
 		
 		//¸üĞÂled×´Ì¬
 		update_led_status();
+		
+		//¸üĞÂ×éºÏ±¨¾¯±êÖ¾
+		update_alarm_status();
 		
 		if (gl_motor_overcur_flag == 1) {//µç»ú¶Â×ª
 			gl_motor_overcur_point[index]++;
@@ -292,10 +341,10 @@ void adc_task(void)
 		
 		break;
 		
-	case SYS_CHECK:     //ÊµÊ±¼ì²â   
-		//·ÖÎö¸ÖË¿µÄËÉ½ô³Ì¶È
+	case SYS_CHECK:     //ÊµÊ±¼ì²â  
+        //·ÖÎö¸ÖË¿µÄËÉ½ô³Ì¶È
 		for (i = 0; i < 12; i++) {
-			ad_chnn_state[i] += ad_chn_sample[i].w;
+			ad_chnn_state[i] += ad_chn_sample[i];
 		}
 		ad_samp_pnum++;
 		if (ad_samp_pnum == 45) {//´óÔ¼ºÄÊ±11.7s£¬µç»ú×ª¶¯Ê±¼äÎª10s
@@ -303,27 +352,29 @@ void adc_task(void)
 			
 			for (i = 0; i < 12; i++) {//×ó1 ÓÒ1 ×ó2 ÓÒ2 ×ó3 ÓÒ3 ×ó4 ÓÒ4 ×ó5 ÓÒ5 ×ó6 ÓÒ6
 				//ÅĞ¶Ï²¦Âë¿ª¹ØÊÇ·ñ´ò¿ª
-				gl_chnn_index = matrix_index[i];
-				if ((ad_sensor_mask >> gl_chnn_index) & 0x0001) {//²¦Âë´ò¿ª
-					if ((gl_chnn_index >= 0) && (gl_chnn_index <= 5)) {//×ó1~×ó6					
-						if (((ad_chnn_wire_cut >> (gl_chnn_index + 8)) & 0x0001) == 0) {//¸ÖË¿Ã»ÓĞ±»¼ô¶Ï
-							val = ad_chnn_state[gl_chnn_index] / 45;
+				temp_index = matrix_index[i];
+				if ((ad_sensor_mask >> temp_index) & 0x0001) {//²¦Âë´ò¿ª
+					if ((temp_index >= 0) && (temp_index <= 5)) {//×ó1~×ó6					
+						if (((ad_chnn_wire_cut >> (temp_index + 8)) & 0x0001) == 0) {//¸ÖË¿Ã»ÓĞ±»¼ô¶Ï
+							val = ad_chnn_state[temp_index] / 45;
 							if (val < 60) {//¸ÖË¿±È½ÏËÉ£¬ÊÕ½ô¸ÖË¿
 								gl_motor_adjust_flag  = 0;
 								gl_motor_overcur_flag = 0;
 								is_timeout            = 0;
 								motor_adjust(i);
+                                gl_chnn_index = temp_index;
 								break;
 							}
 						}
-					} else if ((gl_chnn_index >= 6) && (gl_chnn_index <= 11)) {//ÓÒ1~ÓÒ6					
-						if (((ad_chnn_wire_cut >> (gl_chnn_index - 6)) & 0x0001) == 0) {//¸ÖË¿Ã»ÓĞ±»¼ô¶Ï
-							val = ad_chnn_state[gl_chnn_index] / 45;
+					} else if ((temp_index >= 6) && (temp_index <= 11)) {//ÓÒ1~ÓÒ6					
+						if (((ad_chnn_wire_cut >> (temp_index - 6)) & 0x0001) == 0) {//¸ÖË¿Ã»ÓĞ±»¼ô¶Ï
+							val = ad_chnn_state[temp_index] / 45;
 							if (val < 60) {//¸ÖË¿±È½ÏËÉ£¬ÊÕ½ô¸ÖË¿
 								gl_motor_adjust_flag  = 0;
 								gl_motor_overcur_flag = 0;
 								is_timeout            = 0;
 								motor_adjust(i);
+                                gl_chnn_index = temp_index;
 								break;
 							}
 						}
@@ -338,9 +389,9 @@ void adc_task(void)
 		
 		if (gl_motor_adjust_flag == 1) {//µç»úÕıÔÚÔË×ª
 			//Á¢¼´Í¬²½¸üĞÂ¾²Ì¬»ù×¼Öµ
-			ad_chn_base[gl_chnn_index].base = ad_chn_sample[gl_chnn_index].w;
+			ad_chn_base[gl_chnn_index].base = ad_chn_sample[gl_chnn_index];
 			val_temp = ad_chn_base[gl_chnn_index].base;
-			ad_chn_base[gl_chnn_index].base_down = val_temp / 3;
+			ad_chn_base[gl_chnn_index].base_down = (val_temp >> 1) - (val_temp >> 3) - (val_temp >> 4);
 			if ((1023 - ad_chn_base[gl_chnn_index].base) > ad_still_Dup[gl_chnn_index]) {
 				ad_chn_base[gl_chnn_index].base_up = ad_chn_base[gl_chnn_index].base + ad_still_Dup[gl_chnn_index];
 			} else {
@@ -360,14 +411,15 @@ void adc_task(void)
 				}
 			}
 		}
-
+        
 		//½âÎö12µÀ¸ÖË¿ÊÇ·ñÍâÁ¦±¨¾¯ÒÔ¼°¾²Ì¬±¨¾¯-->×ó1~×ó6¡¢ÓÒ1~ÓÒ6¡¢¸Ë×ÔÉí
 		//½âÎö¿ØÖÆ¸ËÊÇ·ñÍâÁ¦±¨¾¯£¬¿ØÖÆ¸Ë²»´æÔÚ¾²Ì¬±¨¾¯			
 		for (i = 0; i < 13; i++) {			
 			ad_chn_over[i] = ad_chn_over[i] << 1;   //Bit0Ìî0£¬Òò´ËÈ±Ê¡ÔÚÔÊĞí·¶Î§ÄÚ
-			val = ad_chn_sample[i].w;
-			if (val <= ad_chn_base[i].base_up) {//ÔÚÕÅÁ¦ÉÏ/ÏÂÏŞÔÊĞí·¶Î§ÄÚ
-				//a. Çå±êÖ¾(È±Ê¡)
+			val = ad_chn_sample[i];
+			//if ((val >= ad_chn_base[i].base_down) && (val <= ad_chn_base[i].base_up)) {//ÔÚÕÅÁ¦ÉÏ/ÏÂÏŞÔÊĞí·¶Î§ÄÚ		
+            if (val <= ad_chn_base[i].base_up) {//ÔÚÕÅÁ¦ÉÏ/ÏÂÏŞÔÊĞí·¶Î§ÄÚ
+                //a. Çå±êÖ¾(È±Ê¡)
 				//b. ¼ÆÈë¸ú×Ù»ù×¼ÖµÇóºÍÖĞ
 				ad_samp_sum[i].sum += val;
 				ad_samp_sum[i].point++;
@@ -382,15 +434,18 @@ void adc_task(void)
 						//ZZX: Á¢¼´¸ú×Ù, ¸ú×Ù²îÖµµÄ 1/2
 						val_temp = (ad_chn_base[i].base - val_temp) >> 1;
 						if (ad_chn_base[i].base >= val_temp) {
+                            
 							ad_chn_base[i].base -= val_temp;
 							//Í¬²½¸üĞÂÉÏÏÂÏŞ
 							val_temp = ad_chn_base[i].base;
-							ad_chn_base[i].base_down = val_temp / 3;
-							if ((1023 - ad_chn_base[i].base) > ad_still_Dup[i]) {
+							ad_chn_base[i].base_down = (val_temp >> 1) - (val_temp >> 3) - (val_temp >> 4);
+							//ad_chn_base[i].base_down = val_temp - ad_still_Dup[i] * 2;
+                            if ((1023 - ad_chn_base[i].base) > ad_still_Dup[i]) {
 								ad_chn_base[i].base_up = ad_chn_base[i].base + ad_still_Dup[i];
 							} else {
 								ad_chn_base[i].base_up = 1023;
 							}
+                            
 						}
 
 						//Çå»ºÂıÕÅ½ô¸ú×Ù±äÁ¿
@@ -406,8 +461,9 @@ void adc_task(void)
 								ad_chn_base[i].base++;
 								// Í¬²½¸üĞÂÉÏÏÂÏŞ
 								val_temp = ad_chn_base[i].base;
-								ad_chn_base[i].base_down = val_temp / 3;
-								if (ad_chn_base[i].base_up < 1023) {
+								ad_chn_base[i].base_down = (val_temp >> 1) - (val_temp >> 3) - (val_temp >> 4);
+								//ad_chn_base[i].base_down = val_temp - ad_still_Dup[i] * 2;
+                                if (ad_chn_base[i].base_up < 1023) {
 									ad_chn_base[i].base_up++;
 								}
 							}
@@ -419,13 +475,13 @@ void adc_task(void)
 					//b.2 ¸´Î»½×¶ÎºÍ±äÁ¿ - ÓÃÓÚ4µã4µãÆ½¾ùµÄÇóºÍ½á¹¹
 					ad_samp_sum[i].sum   = 0;
 					ad_samp_sum[i].point = 0;
-				}
+				}              
 			} else {
 				//ÍâÁ¦±¨¾¯, ÖÃ±êÖ¾
 				ad_chn_over[i] |= 0x01;
 			}
 
-			if ((ad_chn_over[i] & 0x0F) == 0x0F) {//Á¬Ğø4µã³¬·¶Î§£¬´ËÍ¨µÀÓĞÍâÁ¦±¨¾¯
+			if ((ad_chn_over[i] & 0x3F) == 0x03F) {//Á¬Ğø6µã³¬·¶Î§£¬´ËÍ¨µÀÓĞÍâÁ¦±¨¾¯
 				if ((i >= 0) && (i <= 5)) {//×ó1~×ó6
 					//³¬³öÔÊĞí·¶Î§£¬ÖÃ±êÖ¾
 					ad_alarm_exts |= ((Uint16)0x01 << (i + 8));
@@ -437,22 +493,33 @@ void adc_task(void)
 				if (i == 12) {//¸Ë×ÔÉí
 					ad_alarm_exts |= ((Uint16)0x01 << (i + 3));
 					ad_alarm_exts |= ((Uint16)0x01 << (i - 5));
+                    
+                    if ((ad_sensor_mask_LR >> 7) & 0x0001) {//¸Ë×ÔÉí²¦Âë´ò¿ª
+                        zs_climb_alarm_flag = 1;
+                    }
 				}
 
-				//±¨¾¯¼ÆÊ±tickÇåÁã
-				ad_alarm_tick[i] = 0;
+				//±¨¾¯¼ÆÊ±tick
+				ad_alarm_tick[i] = ALARM_TEMPO;
 
 				//Á¢¼´¸üĞÂ¾²Ì¬»ù×¼Öµ
 				ad_chn_base[i].base = val;
 				val_temp = ad_chn_base[i].base;
-				ad_chn_base[i].base_down = val_temp / 3;
-				if ((1023 - ad_chn_base[i].base) > ad_still_Dup[i]) {
+				ad_chn_base[i].base_down = (val_temp >> 1) - (val_temp >> 3) - (val_temp >> 4);
+				//ad_chn_base[i].base_down = val_temp - ad_still_Dup[i] * 2;
+                if ((1023 - ad_chn_base[i].base) > ad_still_Dup[i]) {
 					ad_chn_base[i].base_up = ad_chn_base[i].base + ad_still_Dup[i];
 				} else {
 					ad_chn_base[i].base_up = 1023;
 				}
-			} else if ((ad_chn_over[i] & 0x0F) == 0x00) {//ÎŞÍâÁ¦±¨¾¯
-				if (ad_alarm_tick[i] > ALARM_TEMPO) {//¼ì²é±¨¾¯Ê±¼äÊÇ·ñÒÑµ½
+                
+                //¸´Î»½×¶ÎºÍ±äÁ¿ - ÓÃÓÚ4µã4µãÆ½¾ùµÄÇóºÍ½á¹¹
+                ad_samp_sum[i].sum = 0;
+                ad_samp_sum[i].point = 0;               
+                //Çå»ºÂıÕÅ½ô¸ú×Ù±äÁ¿
+                md_point[i] = 0;   //ÓÃÓÚ»ù×¼Öµ¸ú×ÙµÄ¼ÆÁ¿µãÊı
+			} else if ((ad_chn_over[i] & 0x3F) == 0x00) {//ÎŞÍâÁ¦±¨¾¯
+				if (ad_alarm_tick[i] == 0) {//¼ì²é±¨¾¯Ê±¼äÊÇ·ñÒÑµ½
 					//±¨¾¯ÒÑ¾­µ½×î´ó±¨¾¯Ê±¼ä, Í£Ö¹±¨¾¯
 					if ((i >= 0) && (i <= 5)) {//×ó1~×ó6
 						//ÔÚÔÊĞí·¶Î§ÄÚ, Çå±êÖ¾
@@ -465,6 +532,7 @@ void adc_task(void)
 					if (i == 12) {//¸Ë×ÔÉí
 						ad_alarm_exts &= (~((Uint16)0x01 << (i + 3)));
 						ad_alarm_exts &= (~((Uint16)0x01 << (i - 5)));
+                        zs_climb_alarm_flag = 0;
 					}
 				}
 			}
@@ -480,39 +548,33 @@ void adc_task(void)
 		//¶ÁÈ¡×ó¿ª¹ØÁ¿µÄÖµ
 		if (bLeftSwitch == 0) {//±¨¾¯
 			ad_alarm_exts |= (1 << 14);
+            
+            if ((ad_sensor_mask_LR >> 14) & 0x0001) {//×ó¿ª¹ØÁ¿²¦Âë´ò¿ª
+                left_climb_alarm_flag = 1;
+            }            
 		} else {//Õı³£
 			ad_alarm_exts &= (~(1 << 14));
+            left_climb_alarm_flag = 0;
 		}
 		
 		//¶ÁÈ¡ÓÒ¿ª¹ØÁ¿µÄÖµ
 		if (bRightSwitch == 0) {//±¨¾¯
 			ad_alarm_exts |= (1 << 6);
+            
+            if ((ad_sensor_mask_LR >> 6) & 0x0001) {//ÓÒ¿ª¹ØÁ¿²¦Âë´ò¿ª
+                right_climb_alarm_flag = 1;
+            }   
 		} else {//Õı³£
 			ad_alarm_exts &= (~(1 << 6));
+            right_climb_alarm_flag = 0;
 		}
 
 		//¸üĞÂled×´Ì¬
 		update_led_status();
 		
 		//¸üĞÂ×éºÏ±¨¾¯±êÖ¾
-		//¸Ë£¬×ó¿ª¹ØÁ¿£¬×ó6~1±¨¾¯±êÖ¾
-		temp = HIGH((ad_alarm_exts | ad_alarm_base)) & HIGH(ad_sensor_mask_LR);
-		//ÅĞ×ó²à×éºÏ±¨¾¯
-		if (temp == 0) {
-			adl_alarm_flag = 0;   //ÎŞ±¨¾¯
-		} else {
-			adl_alarm_flag = 1;     //ÓĞ±¨¾¯
-		}
-
-		//¸Ë£¬ÓÒ¿ª¹ØÁ¿£¬ÓÒ6~1±¨¾¯±êÖ¾
-		//ÅĞÓÒ²à×éºÏ±¨¾¯
-		temp = LOW((ad_alarm_exts | ad_alarm_base)) & LOW(ad_sensor_mask_LR);
-		if (temp == 0) {
-			adr_alarm_flag = 0;   //ÎŞ±¨¾¯
-		} else {
-			adr_alarm_flag = 1;   //ÓĞ±¨¾¯
-		}
-
+		update_alarm_status();
+		
 		break;
 	}
 }
@@ -525,39 +587,22 @@ void check_still_stress(Byte index)
 		if ((index >= 0) && (index <= 5)) {//×ó1~×ó6
 			//ÔÚÔÊĞí·¶Î§ÄÚ, Çå±êÖ¾
 			ad_alarm_base &= (~((Uint16)0x01 << (index + 8)));
-			
-			//²âÊÔ
-			if (ad_alarm_base & 0x0080) {
-				test = 1;
-			}
 		} else if ((index >= 6) && (index <= 11)) {//ÓÒ1~ÓÒ6
 			//ÔÚÔÊĞí·¶Î§ÄÚ, Çå±êÖ¾
 			ad_alarm_base &= (~((Uint16)0x01 << (index - 6)));
-			
-			//²âÊÔ
-			if (ad_alarm_base & 0x0080) {
-				test = 2;
-			}
 		}
 	} else {
 		if ((index >= 0) && (index <= 5)) {//×ó1~×ó6
 			//³¬³öÔÊĞí·¶Î§£¬ÖÃ±êÖ¾
 			ad_alarm_base |= ((Uint16)0x01 << (index + 8));	
-
-			//²âÊÔ
-			if (ad_alarm_base & 0x0080) {
-				test = 3;
-			}
 		} else if ((index >= 6) && (index <= 11)) {//ÓÒ1~ÓÒ6
 			//³¬³öÔÊĞí·¶Î§£¬ÖÃ±êÖ¾
 			ad_alarm_base |= ((Uint16)0x01 << (index - 6));
-			
-			//²âÊÔ
-			if (ad_alarm_base & 0x0080) {
-				test = 4;
-			}
 		}
 	}
+	
+	//¸Ë×ÔÉí¡¢×ó¿ª¹ØÁ¿¡¢ÓÒ¿ª¹ØÁ¿²»´æÔÚ¾²Ì¬±¨¾¯
+	ad_alarm_base &= 0x3F3F;
 }
 
 //index£º0-11·Ö±ğ¶ÔÓ¦Îª×ó1 ÓÒ1 ×ó2 ÓÒ2 ... ×ó6 ÓÒ6
@@ -577,7 +622,11 @@ void motor_adjust(Byte index)
 		uart2_send_queue[i].tdata[5] = 0x04;
 		uart2_send_queue[i].tdata[6] = 0xF0;
 		uart2_send_queue[i].tdata[7] = index;      //µç»úºÅ
-		uart2_send_queue[i].tdata[8] = 1;          //Õı×ª
+        if ((gl_motor_channel_number == 4) || (gl_motor_channel_number == 5)) {
+        	uart2_send_queue[i].tdata[8] = gl_5_motor_control_code[index];          //Õı×ª
+        } else if (gl_motor_channel_number == 6) {
+        	uart2_send_queue[i].tdata[8] = gl_6_motor_control_code[index];          //Õı×ª
+        }
 		uart2_send_queue[i].tdata[9] = 10;         //ÔË×ªÊ±¼ä10s
 
 		uart2_send_queue[i].len = 11;
@@ -598,4 +647,27 @@ void update_led_status(void)
 
 	//¸Ë×ÔÉí±¨¾¯±êÖ¾
 	bSelf_Led_Ctrl = (~((ad_alarm_exts >> 7) & 0x0001) & 0x0001);	
+}
+
+void update_alarm_status(void)
+{
+	Byte temp;
+	
+	//×ó6~1±¨¾¯±êÖ¾
+	temp = HIGH((ad_alarm_exts | ad_alarm_base)) & HIGH(ad_sensor_mask_LR) & 0x3F;//¹ıÂË¸Ë×ÔÉíÅÊÅÀ±¨¾¯ºÍ×ó¿ª¹ØÁ¿ÅÊÅÀ±¨¾¯£¬¸Ë×ÔÉíÅÊÅÀ±¨¾¯ºÍ×ó¿ª¹ØÁ¿ÅÊÅÀ±¨¾¯²»ËãÔÚ×ó·ÀÇø±¨¾¯ÄÚ£¬µ¥¶À¿ª±ÙÒ»¸öÅÊÅÀ±¨¾¯
+	//ÅĞ×ó²à×éºÏ±¨¾¯
+	if (temp == 0) {
+		adl_alarm_flag = 0;   //ÎŞ±¨¾¯
+	} else {
+		adl_alarm_flag = 1;     //ÓĞ±¨¾¯
+	}
+
+	//ÓÒ6~1±¨¾¯±êÖ¾
+	temp = LOW((ad_alarm_exts | ad_alarm_base)) & LOW(ad_sensor_mask_LR) & 0x3F;//¹ıÂË¸Ë×ÔÉíÅÊÅÀ±¨¾¯ºÍÓÒ¿ª¹ØÁ¿ÅÊÅÀ±¨¾¯£¬¸Ë×ÔÉíÅÊÅÀ±¨¾¯ºÍÓÒ¿ª¹ØÁ¿ÅÊÅÀ±¨¾¯²»ËãÔÚÓÒ·ÀÇø±¨¾¯ÄÚ£¬µ¥¶À¿ª±ÙÒ»¸öÅÊÅÀ±¨¾¯
+    //ÅĞÓÒ²à×éºÏ±¨¾¯
+    if (temp == 0) {
+		adr_alarm_flag = 0;   //ÎŞ±¨¾¯
+	} else {
+		adr_alarm_flag = 1;   //ÓĞ±¨¾¯
+	}
 }
