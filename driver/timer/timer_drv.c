@@ -18,7 +18,7 @@ extern xdata  Byte        gl_local_dk_tick;            //防水箱的门磁检测计时tic
 
 /* 系统计时 */
 extern xdata  Uint16      gl_delay_tick;               //通用延时用tick
-extern xdata  Byte        gl_ack_tick;	               //应答延时计时 tick
+extern xdata  Uint16      gl_ack_tick;	               //应答延时计时 tick
 
 /* for beep */
 extern bdata  bit         beep_flag;                   //蜂鸣标志: 0 - 禁鸣; 1 - 正在蜂鸣

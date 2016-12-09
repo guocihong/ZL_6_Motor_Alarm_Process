@@ -86,9 +86,10 @@ xdata  Uint16      ad_chnn_state[12];           //用来分析钢丝的松紧程
 xdata  Byte        matrix_index[12] = {0, 6, 1, 7, 2, 8, 3, 9, 4, 10, 5, 11};//左1 右1 左2 右2 左3 右3 左4 右4 左5 右5 左6 右6
 										 
 /* 系统计时 */
-xdata  Byte        gl_ack_tick = 0;	            //上位机485口应答延时计时 tick
+xdata  Uint16      gl_ack_tick = 0;	            //上位机485口应答延时计时 tick
 xdata  Uint16      gl_delay_tick;               //通用延时用tick
- 
+xdata  Byte        gl_reply_tick;               //设备返回延时
+
 /* for alarm */
 bdata  Byte        alarm_out_flag;              //位址76543210  对应  左开关量攀爬报警 右开关量攀爬报警 杆自身攀爬报警 右防区报警 左防区报警 X X X
                                                 //报警输出标志：位值0 - 无报警（继电器上电吸合）; 位值1 - 报警(断电)

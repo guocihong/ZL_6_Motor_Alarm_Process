@@ -51,12 +51,13 @@ extern xdata  sUART_Q  uart4_send_queue[UART_QUEUE_NUM];     // 串口发送队列
 extern xdata  sUART_Q  uart4_recv_queue[UART_QUEUE_NUM];     // 串口接收队列
 
 /* 系统计时 */
-extern xdata  Byte     gl_ack_tick;	                //应答延时计时 tick
+extern xdata  Uint16   gl_ack_tick;	                //应答延时计时 tick
+extern xdata  Byte     gl_reply_tick;               //设备返回延时
 
 /* for system */
 extern  data  Byte     gl_comm_addr;                //本模块485通信地址
 extern  data  Byte     system_status;               //系统状态
-extern xdata Byte     matrix_index[12];
+extern xdata  Byte     matrix_index[12];
 
 /* for alarm */
 extern bdata  Byte     alarm_out_flag;              //位址76543210  对应  左开关量攀爬报警 右开关量攀爬报警 杆自身攀爬报警 右防区报警 左防区报警 X X X
@@ -182,10 +183,12 @@ void uart_task(void)
 					i = uart3_get_send_buffer();
 					if (i < UART_QUEUE_NUM) {
 						//找到了空闲buffer, 准备应答
+                        uart3_send_queue[i].package_type = 1;              //设备自身的数据包
+                        
 						uart3_send_queue[i].tdata[0] = FRAME_STX;	       //帧头
-						uart3_send_queue[i].tdata[1] = ptr[1];	       //目的地址
-						uart3_send_queue[i].tdata[2] = gl_comm_addr;        //源地址
-						if (gl_comm_addr == CMD_ADDR_UNSOLV) {     //本设备无有效地址
+						uart3_send_queue[i].tdata[1] = ptr[1];	           //目的地址
+						uart3_send_queue[i].tdata[2] = gl_comm_addr;       //源地址
+						if (gl_comm_addr == CMD_ADDR_UNSOLV) {             //本设备无有效地址
 							//只回参数应答
 							uart3_send_queue[i].tdata[3] = 1;
 							uart3_send_queue[i].tdata[4] = CMD_DADDR_aPARA;
@@ -211,6 +214,8 @@ void uart_task(void)
 					i = uart3_get_send_buffer();
 					if (i < UART_QUEUE_NUM) {
 						//找到了空闲buffer, 准备应答
+                        uart3_send_queue[i].package_type = 1;                      //设备自身的数据包
+                        
 						uart3_send_queue[i].tdata[0] = FRAME_STX;	               //帧头
 						uart3_send_queue[i].tdata[1] = ptr[1];	                   //目的地址
 						uart3_send_queue[i].tdata[2] = gl_comm_addr;	           //源地址
@@ -234,6 +239,8 @@ void uart_task(void)
 					i = uart3_get_send_buffer();
 					if (i < UART_QUEUE_NUM) {
 						//找到了空闲buffer, 准备应答
+                        uart3_send_queue[i].package_type = 1;                      //设备自身的数据包
+                        
 						uart3_send_queue[i].tdata[0] = FRAME_STX;	               //帧头
 						uart3_send_queue[i].tdata[1] = ptr[1];	                   //目的地址
 						uart3_send_queue[i].tdata[2] = gl_comm_addr;	           //源地址
@@ -244,6 +251,36 @@ void uart_task(void)
                     
                     break;
                 
+                case 0xE3://设置延时时间
+                    //1. 写入flash
+                    flash_enable();                              
+                    flash_erase(EEPROM_SECTOR10);                                        
+                    flash_write(ptr[4], EEPROM_SECTOR10 + 1);  
+                    flash_write(0x5a, EEPROM_SECTOR10);                                                              
+                    flash_disable();
+
+                    //2. 更新变量
+                    gl_reply_tick = ptr[4];
+
+                    break;
+
+                case 0xE4://读取延时时间
+                    //在UART3队列中找空闲Buffer
+                    i = uart3_get_send_buffer();
+                    if (i < UART_QUEUE_NUM) { //找到了空闲buffer, 准备应答
+                        uart3_send_queue[i].package_type = 1;                          //设备自身的数据包
+                        
+                        uart3_send_queue[i].tdata[0] = FRAME_STX;	                   //帧头
+                        uart3_send_queue[i].tdata[1] = ptr[1];	                       //目的地址
+                        uart3_send_queue[i].tdata[2] = gl_comm_addr;	               //源地址																 
+                        uart3_send_queue[i].tdata[3] = 2;
+                        uart3_send_queue[i].tdata[4] = 0xF4;
+                        uart3_send_queue[i].tdata[5] = gl_reply_tick;
+                        uart3_send_queue[i].len = 7;														
+                    }
+                    
+                    break;	
+                         
 				case CMD_ZL_PRE://张力/脉冲专用命令标志
 					switch (ptr[5])
 					{
@@ -251,6 +288,8 @@ void uart_task(void)
 						//在UART3队列中找空闲Buffer
 						i = uart3_get_send_buffer();
 						if (i < UART_QUEUE_NUM) {//找到了空闲buffer, 写入data
+                            uart3_send_queue[i].package_type = 1;                     //设备自身的数据包
+                            
 							uart3_send_queue[i].tdata[0]  = FRAME_STX;
 							uart3_send_queue[i].tdata[1]  = ptr[1];	                  //目的地址
 							uart3_send_queue[i].tdata[2]  = gl_comm_addr;	          //源地址
@@ -292,6 +331,8 @@ void uart_task(void)
 						i = uart3_get_send_buffer();
 						if (i < UART_QUEUE_NUM) {
 							//找到了空闲buffer, 写入data
+                            uart3_send_queue[i].package_type = 1;                    //设备自身的数据包
+                            
 							uart3_send_queue[i].tdata[0]  = FRAME_STX;
 							uart3_send_queue[i].tdata[1]  = ptr[1];	                 //目的地址
 							uart3_send_queue[i].tdata[2]  = gl_comm_addr;	         //源地址
@@ -326,6 +367,8 @@ void uart_task(void)
 						i = uart3_get_send_buffer();
 						if (i < UART_QUEUE_NUM) {
 							//找到了空闲buffer, 写入data
+                            uart3_send_queue[i].package_type = 1;               //设备自身的数据包
+                            
 							uart3_send_queue[i].tdata[0] = FRAME_STX;
 							uart3_send_queue[i].tdata[1] = ptr[1];	            //目的地址
 							uart3_send_queue[i].tdata[2] = gl_comm_addr;	    //源地址
@@ -371,8 +414,10 @@ void uart_task(void)
 						i = uart3_get_send_buffer();
 						if (i < UART_QUEUE_NUM) {
 							//找到了空闲buffer, 写入data
+                            uart3_send_queue[i].package_type = 1;                //设备自身的数据包
+                            
 							uart3_send_queue[i].tdata[0] = FRAME_STX;
-							uart3_send_queue[i].tdata[1] = ptr[1];	    //目的地址
+							uart3_send_queue[i].tdata[1] = ptr[1];	            //目的地址
 							uart3_send_queue[i].tdata[2] = gl_comm_addr;	    //源地址
 							uart3_send_queue[i].tdata[3] = 0x23;
 							uart3_send_queue[i].tdata[4] = CMD_ZL_PRE;
@@ -565,6 +610,8 @@ void uart_task(void)
 						i = uart3_get_send_buffer();
 						if (i < UART_QUEUE_NUM) {
 							//找到了空闲buffer, 写入data
+                            uart3_send_queue[i].package_type = 1;               //设备自身的数据包
+                            
 							uart3_send_queue[i].tdata[0] = FRAME_STX;
 							uart3_send_queue[i].tdata[1] = ptr[1];	            //目的地址
 							uart3_send_queue[i].tdata[2] = gl_comm_addr;	    //源地址
@@ -596,6 +643,8 @@ void uart_task(void)
 						i = uart3_get_send_buffer();
 						if (i < UART_QUEUE_NUM) {
 							//找到了空闲buffer, 写入data
+                            uart3_send_queue[i].package_type = 1;               //设备自身的数据包
+                            
 							uart3_send_queue[i].tdata[0] = FRAME_STX;
 							uart3_send_queue[i].tdata[1] = ptr[1];	            //目的地址
 							uart3_send_queue[i].tdata[2] = gl_comm_addr;	    //源地址
@@ -624,6 +673,8 @@ void uart_task(void)
 						i = uart3_get_send_buffer();
 						if (i < UART_QUEUE_NUM) {
 							//找到了空闲buffer, 写入data
+                            uart3_send_queue[i].package_type = 1;               //设备自身的数据包
+                            
 							uart3_send_queue[i].tdata[0] = FRAME_STX;
 							uart3_send_queue[i].tdata[1] = ptr[1];	            //目的地址
 							uart3_send_queue[i].tdata[2] = gl_comm_addr;	    //源地址
@@ -639,12 +690,12 @@ void uart_task(void)
 					}
 					break;
 				}
+                
+                //设置应答延时
+                Disable_interrupt();
+                gl_ack_tick = REPLY_DLY + (gl_comm_addr - 16) * gl_reply_tick / SCHEDULER_TICK;
+                Enable_interrupt();
 			}
-
-			//设置应答延时
-			Disable_interrupt();
-			gl_ack_tick = REPLY_DLY;
-			Enable_interrupt();
 			
 			//处理完成,释放该队列项
 			uart3_recv_queue[k].flag = 0;
@@ -665,6 +716,8 @@ void uart_task(void)
 			i = uart3_get_send_buffer();
 			if (i < UART_QUEUE_NUM) {
 				//找到了空闲buffer, 写入data
+                uart3_send_queue[i].package_type = 0;         //来自下位机的数据包
+                
 				uart3_send_queue[i].tdata[0] = FRAME_STX;
 				memcpy(&uart3_send_queue[i].tdata[1], ptr, ptr[2] + 3);
 				uart3_send_queue[i].len = ptr[2] + 5;
@@ -678,18 +731,26 @@ void uart_task(void)
 	}
 	
 	//3. UART3 队列发送
-	if ((uart3_q_index == 0xFF) && (recv3_state == FSA_INIT) && (gl_ack_tick == 0)) {
+	if ((uart3_q_index == 0xFF) && (recv3_state == FSA_INIT)) {
 		//UART3无进入发送流程的队列项, 找是否有等待发送的项
 		for (i = 0; i < UART_QUEUE_NUM; i++) {
-			if (uart3_send_queue[i].flag == 1) {
-				//有等待发送的项，安排此项发送
+			if ((uart3_send_queue[i].flag == 1) && (uart3_send_queue[i].package_type == 0)){
+                //来自下位机的数据包:有等待发送的项，安排此项发送
 				uart3_send_queue[i].flag = 2;
 				uart3_q_index = i;
 				memcpy(trans3_buf, uart3_send_queue[i].tdata, uart3_send_queue[i].len - 1);
 				trans3_size = uart3_send_queue[i].len;
 				uart3_start_trans();
 				break;
-			}
+			}else if((uart3_send_queue[i].flag == 1) && (uart3_send_queue[i].package_type == 1) && (gl_ack_tick == 0)){
+                //设备自身的数据包:有等待发送的项，安排此项发送
+				uart3_send_queue[i].flag = 2;
+				uart3_q_index = i;
+				memcpy(trans3_buf, uart3_send_queue[i].tdata, uart3_send_queue[i].len - 1);
+				trans3_size = uart3_send_queue[i].len;
+				uart3_start_trans();
+				break;
+            }
 		}
 	}
 

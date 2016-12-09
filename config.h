@@ -54,6 +54,7 @@ typedef struct strUART_Q
   Byte  flag;                               //状态： 0 - 空闲； 1 - 等待发送； 2 - 正在发送; 3 - 已发送，等待应答
   Byte  tdata[MAX_TransFrame];              //数据包(最后一个校验字节可以不提前计算，而在发送时边发送边计算)
   Byte  len;					            //数据包有效长度(含校验字节)
+  Byte  package_type;                       //0-来自下位机的数据包;1-设备自身的数据包
 }sUART_Q;
 
 #define UART_QUEUE_NUM      7                       //UART 队列数

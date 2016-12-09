@@ -4,8 +4,10 @@ static void gpio_init(void);
 static void get_defence_info(void);
 static void get_config_info(void);
 
+
 /* System */
 extern  data  Byte        gl_comm_addr;                //本模块485通信地址
+extern xdata  Byte        gl_reply_tick;               //设备返回延时
 
 /* for beep */
 extern xdata  Uint16      beep_during_temp;            // 预设的一次蜂鸣持续时间, 单位:tick 
@@ -300,6 +302,14 @@ static void get_config_info(void)
 		is_sample_clear = flash_read(EEPROM_SECTOR9 + 1);
 	} else {//无有效设置
         is_sample_clear = 0;//默认采样值没有清零
+    }
+    
+    //读取延时时间
+    temp = flash_read(EEPROM_SECTOR10);
+    if (temp == 0x5A) { //有有效设置
+        gl_reply_tick = flash_read(EEPROM_SECTOR10 + 1);
+    } else {	//无有效设置
+        gl_reply_tick = 0;
     }
     
 	//禁止Flash访问
