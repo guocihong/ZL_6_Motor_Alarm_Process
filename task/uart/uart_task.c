@@ -81,6 +81,7 @@ extern  data  Uint16   ad_alarm_base;	            //æ≤Ã¨’≈¡¶±®æØ±Í÷æ£®Œﬁmask£©£∫
 extern xdata  Uint16   ad_still_dn;                 //æ≤Ã¨¿≠¡¶÷µœ¬œﬁ
 extern xdata  Uint16   ad_still_up;                 //æ≤Ã¨¿≠¡¶÷µ…œœﬁ
 extern xdata  Byte     ad_still_Dup[13];            //±®æØ∑ß÷µ…œœﬁ
+extern xdata  Byte     alarm_point_num;             //±®æØµ„ ˝-->¡¨–¯∂‡…Ÿ∏ˆµ„±®æØ≤≈≈–∂®Œ™±®æØ
 
 /* µÁª˙∂¬◊™±Í÷æ */
 extern bdata  volatile bit      gl_motor_adjust_flag;        //µÁª˙ «∑Ò¥¶”⁄π§◊˜◊¥Ã¨£∫0-Õ£÷ππ§◊˜◊¥Ã¨;1-’˝¥¶”⁄π§◊˜◊¥Ã¨
@@ -91,9 +92,16 @@ extern bdata  bit      is_motor_add_link;           //µÁª˙’≈¡¶ «∑ÒÃÌº”º∂¡™:0-≤ªº
 extern bdata  bit      is_sample_clear;             //≤…—˘÷µ «∑Ò«Â¡„:0-√ª”–«Â¡„£ª1-“—æ≠«Â¡„
 extern xdata  Uint16   check_sample_clear_tick;     //”√¿¥ºÏ≤‚≤…—˘÷µ «∑Ò«Â¡„≥…π¶º∆ ±tick
 
+//2016-02-28–¬‘ˆ
+extern xdata sAlarmDetailInfo  AlarmDetailInfo;     //±£¥Ê◊Ó∫Û“ª¥Œ±®æØœÍœ∏–≈œ¢
+
 /* ∫Ø ˝…˘√˜ */
 extern void check_still_stress(Byte index);
 
+//2016-02-28–¬‘ˆ
+//±£¥Ê±®æØœÍœ∏–≈œ¢
+extern void save_alarm_detail_info(void);
+    
 void uart_task_init(void)
 {
 	Byte i;
@@ -203,6 +211,9 @@ void uart_task(void)
 								uart3_send_queue[i].tdata[4] = CMD_DADDR_aSTAT;
 								uart3_send_queue[i].tdata[5] = (alarm_out_flag & 0xF8) >> 3;
 								uart3_send_queue[i].len = 7;
+                                
+                                //±£¥Ê±®æØœÍœ∏–≈œ¢
+                                save_alarm_detail_info();
 							}
 						}
 					}
@@ -687,6 +698,99 @@ void uart_task(void)
 							uart3_send_queue[i].len = 9;
 						}
                         break;
+                        
+                    //2016-02-28–¬‘ˆ
+                    case 0xF8://∂¡»°±®æØœÍœ∏–≈œ¢                                
+                        get_alarm_detail_info();
+                        break;
+                    
+                    case 0xF9: //…Ë÷√∆Ωæ˘÷µµ„ ˝-->≤…—˘∂‡…Ÿ∏ˆµ„«Û∆Ωæ˘÷µ                        
+						//‘⁄UART2∂”¡–÷–’“ø’œ–Buffer
+						i = uart2_get_send_buffer();
+						if (i < UART_QUEUE_NUM) {
+							//’“µΩ¡Àø’œ–buffer, –¥»Îdata
+							uart2_send_queue[i].tdata[0] = FRAME_STX;
+							uart2_send_queue[i].tdata[1] = 0xFF;        //ƒøµƒµÿ÷∑
+							uart2_send_queue[i].tdata[2] = 0x01;	    //‘¥µÿ÷∑
+							uart2_send_queue[i].tdata[3] = 0x04;
+							uart2_send_queue[i].tdata[4] = CMD_ZL_PRE;
+							uart2_send_queue[i].tdata[5] = 0x02;
+							uart2_send_queue[i].tdata[6] = 0xF9;	
+                            if (ptr[6] < 4) {
+                                uart2_send_queue[i].tdata[7] = 4;	
+                            } else if (ptr[6] > 8){
+                                uart2_send_queue[i].tdata[7] = 8;	
+                            } else {
+                                uart2_send_queue[i].tdata[7] = ptr[6];	
+                            }
+                            
+							uart2_send_queue[i].len = 9;
+						}
+                        
+                        //∑µªÿ–≈œ¢
+                        //‘⁄UART3∂”¡–÷–’“ø’œ–Buffer
+						i = uart3_get_send_buffer();
+						if (i < UART_QUEUE_NUM) {
+							//’“µΩ¡Àø’œ–buffer, –¥»Îdata
+                            uart3_send_queue[i].package_type = 1;               //…Ë±∏◊‘…Ìµƒ ˝æ›∞¸
+                            
+							uart3_send_queue[i].tdata[0] = FRAME_STX;
+							uart3_send_queue[i].tdata[1] = ptr[1];	            //ƒøµƒµÿ÷∑
+							uart3_send_queue[i].tdata[2] = gl_comm_addr;	    //‘¥µÿ÷∑
+							uart3_send_queue[i].tdata[3] = 0x04;
+							uart3_send_queue[i].tdata[4] = CMD_ZL_PRE;
+							uart3_send_queue[i].tdata[5] = 0x02;
+							uart3_send_queue[i].tdata[6] = 0x21;
+                            if (ptr[6] < 4) {
+                                uart3_send_queue[i].tdata[7] = 4;	
+                            } else if (ptr[6] > 8){
+                                uart3_send_queue[i].tdata[7] = 8;	
+                            } else {
+                                uart3_send_queue[i].tdata[7] = ptr[6];	
+                            }
+							
+							uart3_send_queue[i].len = 9;
+						}
+                        
+                        break;
+                        
+                    case 0xFA: //…Ë÷√±®æØµ„ ˝-->¡¨–¯∂‡…Ÿ∏ˆµ„±®æØ≤≈≈–∂®Œ™±®æØ
+                        //∏¸–¬±‰¡ø
+                        if (ptr[6] < 4) {
+                            alarm_point_num = 4;
+
+                        } else if (ptr[6] > 8){
+                            alarm_point_num = 8;
+                        } else {
+                            alarm_point_num = ptr[6];
+                        }
+                        
+                        //–¥»Îflash
+                        flash_enable();
+						flash_erase(EEPROM_SECTOR11);
+						flash_write(alarm_point_num, EEPROM_SECTOR11 + 1);
+						flash_write(0x5a, EEPROM_SECTOR11);
+						flash_disable();
+                        
+                        //∑µªÿ–≈œ¢
+                        //‘⁄UART3∂”¡–÷–’“ø’œ–Buffer
+						i = uart3_get_send_buffer();
+						if (i < UART_QUEUE_NUM) {
+							//’“µΩ¡Àø’œ–buffer, –¥»Îdata
+                            uart3_send_queue[i].package_type = 1;               //…Ë±∏◊‘…Ìµƒ ˝æ›∞¸
+                            
+							uart3_send_queue[i].tdata[0] = FRAME_STX;
+							uart3_send_queue[i].tdata[1] = ptr[1];	            //ƒøµƒµÿ÷∑
+							uart3_send_queue[i].tdata[2] = gl_comm_addr;	    //‘¥µÿ÷∑
+							uart3_send_queue[i].tdata[3] = 0x04;
+							uart3_send_queue[i].tdata[4] = CMD_ZL_PRE;
+							uart3_send_queue[i].tdata[5] = 0x02;
+							uart3_send_queue[i].tdata[6] = 0x22;
+                            uart3_send_queue[i].tdata[7] = alarm_point_num;
+							
+							uart3_send_queue[i].len = 9;
+						}
+                        break;
 					}
 					break;
 				}
@@ -922,4 +1026,175 @@ Byte uart4_get_recv_buffer(void)
 		}
 	}
 	return i;
+}
+
+//2016-02-28–¬‘ˆ
+void get_alarm_detail_info(void)
+{
+    Byte i,j;
+    Uint16 temp16;
+    
+    //1°¢∑µªÿ≈‰÷√–≈œ¢   
+    //‘⁄UART3∂”¡–÷–’“ø’œ–Buffer
+    i = uart3_get_send_buffer();
+    if (i < UART_QUEUE_NUM) {//’“µΩ¡Àø’œ–buffer, –¥»Îdata
+        uart3_send_queue[i].package_type = 1;                     //…Ë±∏◊‘…Ìµƒ ˝æ›∞¸
+        
+        uart3_send_queue[i].tdata[0]  = FRAME_STX;
+        uart3_send_queue[i].tdata[1]  = 0x01;	                  //ƒøµƒµÿ÷∑
+        uart3_send_queue[i].tdata[2]  = gl_comm_addr;	          //‘¥µÿ÷∑
+        uart3_send_queue[i].tdata[3]  = 0x1E;                     //√¸¡Ó≥§∂»
+        uart3_send_queue[i].tdata[4]  = CMD_ZL_PRE;		          //√¸¡ÓID
+        uart3_send_queue[i].tdata[5]  = 0x1C;                     //≤Œ ˝1
+        uart3_send_queue[i].tdata[6]  = 0x08;                     //≤Œ ˝2
+        uart3_send_queue[i].tdata[7]  = HIGH(ad_sensor_mask_LR);  //’≈¡¶—⁄¬Î◊Û
+        uart3_send_queue[i].tdata[8]  = LOW(ad_sensor_mask_LR);   //’≈¡¶—⁄¬Î”“
+        uart3_send_queue[i].tdata[9]  = HIGH(ad_still_dn);        //æ≤Ã¨’≈¡¶‘ –Ìœ¬œﬁ∏ﬂ
+        uart3_send_queue[i].tdata[10] = LOW(ad_still_dn);         //æ≤Ã¨’≈¡¶‘ –Ìœ¬œﬁµÕ
+        uart3_send_queue[i].tdata[11] = HIGH(ad_still_up);        //æ≤Ã¨’≈¡¶‘ –Ì…œœﬁ∏ﬂ
+        uart3_send_queue[i].tdata[12] = LOW(ad_still_up);         //æ≤Ã¨’≈¡¶‘ –Ì…œœﬁµÕ
+        uart3_send_queue[i].tdata[13] = system_status;            //±®æØ∑ß÷µœ¬∏°±»¿˝
+        for (j = 0; j < 6; j++) {                                 //±®æØ∑ß÷µ◊Û1~6
+            uart3_send_queue[i].tdata[14 + j] = ad_still_Dup[j];
+        }
+
+        uart3_send_queue[i].tdata[20] = 0;                        //◊Ûø™πÿ¡ø
+        uart3_send_queue[i].tdata[21] = ad_still_Dup[12];         //∏À◊‘…Ì
+        
+        for (j = 0; j < 6; j++) {                                 //±®æØ∑ß÷µ”“1~6
+            uart3_send_queue[i].tdata[22 + j] = ad_still_Dup[6 + j];
+        }
+        uart3_send_queue[i].tdata[28] = 0;                        //”“ø™πÿ¡ø
+        uart3_send_queue[i].tdata[29] = ad_still_Dup[12];         //∏À◊‘…Ì
+        
+        uart3_send_queue[i].tdata[30] = 0;                        //À´/µ•∑¿«¯
+        uart3_send_queue[i].tdata[31] = gl_comm_addr;             //≤¶¬Îµÿ÷∑
+        uart3_send_queue[i].tdata[32] = (Byte)((beep_during_temp * SCHEDULER_TICK) / 1000);	//…˘π‚±®æØ ‰≥ˆ ±º‰
+        uart3_send_queue[i].tdata[33] = 0;
+        uart3_send_queue[i].len = 35;
+    }
+          
+    //2°¢∂¡»°±®æØ–≈œ¢
+    //‘⁄UART3∂”¡–÷–’“ø’œ–Buffer
+    i = uart3_get_send_buffer();
+    if (i < UART_QUEUE_NUM) {
+        //’“µΩ¡Àø’œ–buffer, –¥»Îdata
+        uart3_send_queue[i].package_type = 1;                    //…Ë±∏◊‘…Ìµƒ ˝æ›∞¸
+        
+        uart3_send_queue[i].tdata[0]  = FRAME_STX;
+        uart3_send_queue[i].tdata[1]  = 0x01;	                 //ƒøµƒµÿ÷∑
+        uart3_send_queue[i].tdata[2]  = gl_comm_addr;	         //‘¥µÿ÷∑
+        uart3_send_queue[i].tdata[3]  = 0x0A;                    //√¸¡Ó≥§∂»
+        uart3_send_queue[i].tdata[4]  = CMD_ZL_PRE;              //√¸¡ÓID
+        uart3_send_queue[i].tdata[5]  = 0x08;                    //≤Œ ˝1
+        uart3_send_queue[i].tdata[6]  = 0x1A;                    //≤Œ ˝1
+        uart3_send_queue[i].tdata[7]  = HIGH(ad_sensor_mask_LR); //’≈¡¶—⁄¬Î◊Û
+        uart3_send_queue[i].tdata[8]  = LOW(ad_sensor_mask_LR);  //’≈¡¶—⁄¬Î”“
+
+        // ∏À£¨◊Ûø™πÿ¡ø£¨◊Û6~1±®æØ±Í÷æ
+        uart3_send_queue[i].tdata[9]  = HIGH(AlarmDetailInfo.ExternalAlarm);     //Õ‚¡¶±®æØ◊Û
+
+        // ∏À£¨”“ø™πÿ¡ø£¨”“6~1±®æØ±Í÷æ
+        uart3_send_queue[i].tdata[10] = LOW(AlarmDetailInfo.ExternalAlarm);      //Õ‚¡¶±®æØ”“
+
+        // ∏À£¨◊Ûø™πÿ¡ø£¨◊Û6~1±®æØ±Í÷æ
+        uart3_send_queue[i].tdata[11] = HIGH(AlarmDetailInfo.StaticAlarm);     //æ≤Ã¨’≈¡¶±®æØ◊Û
+
+        // ∏À£¨”“ø™πÿ¡ø£¨”“6~1±®æØ±Í÷æ
+        uart3_send_queue[i].tdata[12] = LOW(AlarmDetailInfo.StaticAlarm);      //æ≤Ã¨’≈¡¶±®æØ”“
+        
+        //√≈¥≈
+        uart3_send_queue[i].tdata[13] = (Byte)(gl_local_dk_status | !gl_control_dk_status);   
+        uart3_send_queue[i].len = 15;
+    }
+    
+    //3°¢∂¡À≤Ã¨’≈¡¶
+    //‘⁄UART3∂”¡–÷–’“ø’œ–Buffer
+    i = uart3_get_send_buffer();
+    if (i < UART_QUEUE_NUM) {
+        //’“µΩ¡Àø’œ–buffer, –¥»Îdata
+        uart3_send_queue[i].package_type = 1;               //…Ë±∏◊‘…Ìµƒ ˝æ›∞¸
+        
+        uart3_send_queue[i].tdata[0] = FRAME_STX;
+        uart3_send_queue[i].tdata[1] = 0x01;	            //ƒøµƒµÿ÷∑
+        uart3_send_queue[i].tdata[2] = gl_comm_addr;	    //‘¥µÿ÷∑
+        uart3_send_queue[i].tdata[3] = 0x23;
+        uart3_send_queue[i].tdata[4] = CMD_ZL_PRE;
+        uart3_send_queue[i].tdata[5] = 0x21;
+        uart3_send_queue[i].tdata[6] = 0x1C;
+        for (j = 0; j < 6; j++) { //◊Û1~6
+            temp16 = AlarmDetailInfo.InstantSampleValue[j];
+            uart3_send_queue[i].tdata[7 + (j << 1)] = HIGH(temp16);
+            uart3_send_queue[i].tdata[8 + (j << 1)] = LOW(temp16);
+        }
+        //◊Ûø™πÿ¡ø
+        uart3_send_queue[i].tdata[19] = 0;
+        uart3_send_queue[i].tdata[20] = 0;
+        
+        //∏À◊‘…Ì
+        temp16 = AlarmDetailInfo.InstantSampleValue[12];
+        uart3_send_queue[i].tdata[21] = HIGH(temp16);
+        uart3_send_queue[i].tdata[22] = LOW(temp16);
+        
+        for (j = 0; j < 6; j++) { //”“1~6
+            temp16 = AlarmDetailInfo.InstantSampleValue[6+j];
+            uart3_send_queue[i].tdata[23 + (j << 1)] = HIGH(temp16);
+            uart3_send_queue[i].tdata[24 + (j << 1)] = LOW(temp16);
+        }
+        //”“ø™πÿ¡ø
+        uart3_send_queue[i].tdata[35] = 0;
+        uart3_send_queue[i].tdata[36] = 0;
+        
+        //∏À◊‘…Ì
+        temp16 = AlarmDetailInfo.InstantSampleValue[12];
+        uart3_send_queue[i].tdata[37] = HIGH(temp16);
+        uart3_send_queue[i].tdata[38] = LOW(temp16);
+        
+        uart3_send_queue[i].len = 40;
+    }
+    
+    //4°¢∂¡æ≤Ã¨’≈¡¶ª˘◊º
+    //‘⁄UART3∂”¡–÷–’“ø’œ–Buffer
+    i = uart3_get_send_buffer();
+    if (i < UART_QUEUE_NUM) {
+        //’“µΩ¡Àø’œ–buffer, –¥»Îdata
+        uart3_send_queue[i].package_type = 1;                //…Ë±∏◊‘…Ìµƒ ˝æ›∞¸
+        
+        uart3_send_queue[i].tdata[0] = FRAME_STX;
+        uart3_send_queue[i].tdata[1] = 0x01;	            //ƒøµƒµÿ÷∑
+        uart3_send_queue[i].tdata[2] = gl_comm_addr;	    //‘¥µÿ÷∑
+        uart3_send_queue[i].tdata[3] = 0x23;
+        uart3_send_queue[i].tdata[4] = CMD_ZL_PRE;
+        uart3_send_queue[i].tdata[5] = 0x21;
+        uart3_send_queue[i].tdata[6] = 0x1D;
+        for (j = 0; j < 6; j++) { //◊Û1~6
+            temp16 = AlarmDetailInfo.StaticBaseValue[j];
+            uart3_send_queue[i].tdata[7 + (j << 1)] = HIGH(temp16);
+            uart3_send_queue[i].tdata[8 + (j << 1)] = LOW(temp16);
+        }
+        //◊Ûø™πÿ¡ø
+        uart3_send_queue[i].tdata[19] = 0;
+        uart3_send_queue[i].tdata[20] = 0;
+        
+        //∏À◊‘…Ì
+        temp16 = AlarmDetailInfo.StaticBaseValue[12];
+        uart3_send_queue[i].tdata[21] = HIGH(temp16);
+        uart3_send_queue[i].tdata[22] = LOW(temp16);
+        
+        for (j = 0; j < 6; j++) { //”“1~6
+            temp16 = AlarmDetailInfo.StaticBaseValue[6+j];
+            uart3_send_queue[i].tdata[23 + (j << 1)] = HIGH(temp16);
+            uart3_send_queue[i].tdata[24 + (j << 1)] = LOW(temp16);
+        }
+        //”“ø™πÿ¡ø
+        uart3_send_queue[i].tdata[35] = 0;
+        uart3_send_queue[i].tdata[36] = 0;
+        
+        //∏À◊‘…Ì
+        temp16 = AlarmDetailInfo.StaticBaseValue[12];
+        uart3_send_queue[i].tdata[37] = HIGH(temp16);
+        uart3_send_queue[i].tdata[38] = LOW(temp16);
+        
+        uart3_send_queue[i].len = 40;
+    }
 }

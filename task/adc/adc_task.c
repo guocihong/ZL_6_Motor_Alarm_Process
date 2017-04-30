@@ -21,6 +21,9 @@ extern xdata  Byte     ad_still_Dup[13];               //报警阀值上限
 extern  data  Uint16   ad_alarm_exts;                  //外力报警标志（无mask）： 位值 0 - 无； 1 - 超阀值
 extern  data  Uint16   ad_alarm_base;                  //静态张力报警标志（无mask）： 位值 0 - 允许范围内； 1 - 超允许范围
 extern xdata  Uint16   ad_chnn_state[12];              //用来分析钢丝的松紧程度，从左至右的顺序为：左1~左6,右1~右6
+extern xdata  Byte     alarm_point_num;                //报警点数-->连续多少个点报警才判定为报警
+
+static xdata  Byte     alarm_matrix[5] = {0x0F,0x1F,0x3F,0x7F,0xFF};
 
 /* for this task: 用于基准值跟踪 */
 static xdata  Byte     md_point[13];                   //用于基准值跟踪的计量点数
@@ -53,7 +56,11 @@ extern bdata  bit      is_motor_add_link;              //电机张力是否添加级联:0-
 extern bdata  bit      is_sample_clear;                //采样值是否清零:0-没有清零；1-已经清零
 
 /* Doorkeep(门磁) */
-extern bdata  bit      gl_control_dk_status;           //控制杆的门磁状态: 1 - 闭合; 0 - 打开(需要报警)                    				
+extern bdata  bit      gl_local_dk_status;            //门磁开关状态（每1s动态检测）: 1 - 闭合; 0 - 打开(需要报警)
+extern bdata  bit      gl_control_dk_status;          //控制杆的门磁状态: 1 - 闭合; 0 - 打开(需要报警)                    
+
+//2016-02-28新增
+extern xdata sAlarmDetailInfo  AlarmDetailInfo;        //保存最后一次报警详细信息
 
 /* 函数声明*/
 extern Byte uart2_get_send_buffer(void);
@@ -102,7 +109,7 @@ void adc_task(void)
 	Uint16 val;
 	Byte index;
     Byte temp_index;
-    Byte k;
+    Byte k,y;
     
 	//1.处理UART2：来自控制杆的数据包
 	//找是否有等待处理的项
@@ -481,8 +488,15 @@ void adc_task(void)
 				ad_chn_over[i] |= 0x01;
 			}
 
-			if ((ad_chn_over[i] & 0x3F) == 0x03F) {//连续6点超范围，此通道有外力报警
-				if ((i >= 0) && (i <= 5)) {//左1~左6
+            //连续6点超范围，此通道有外力报警
+			if ((ad_chn_over[i] & alarm_matrix[alarm_point_num - 4]) == alarm_matrix[alarm_point_num - 4]) {
+				//先保存报警详细信息，然后再更新静态基准值，这样就可以很好的分析出为什么报警
+                for (y = 0; y < 13; y++) {
+                    AlarmDetailInfo.StaticBaseValue[y] = ad_chn_base[y].base;
+                    AlarmDetailInfo.InstantSampleValue[y] = ad_chn_sample[y];
+                }
+                
+                if ((i >= 0) && (i <= 5)) {//左1~左6
 					//超出允许范围，置标志
 					ad_alarm_exts |= ((Uint16)0x01 << (i + 8));
 				} else if ((i >= 6) && (i <= 11)) {//右1~右6
@@ -517,8 +531,8 @@ void adc_task(void)
                 ad_samp_sum[i].sum = 0;
                 ad_samp_sum[i].point = 0;               
                 //清缓慢张紧跟踪变量
-                md_point[i] = 0;   //用于基准值跟踪的计量点数
-			} else if ((ad_chn_over[i] & 0x3F) == 0x00) {//无外力报警
+                md_point[i] = 0;   //用于基准值跟踪的计量点数                
+			} else if ((ad_chn_over[i] & alarm_matrix[alarm_point_num - 4]) == 0x00) {//无外力报警
 				if (ad_alarm_tick[i] == 0) {//检查报警时间是否已到
 					//报警已经到最大报警时间, 停止报警
 					if ((i >= 0) && (i <= 5)) {//左1~左6
@@ -670,4 +684,23 @@ void update_alarm_status(void)
 	} else {
 		adr_alarm_flag = 1;   //有报警
 	}
+}
+
+//2016-02-28新增
+//保存报警详细信息
+void save_alarm_detail_info(void)
+{    
+    Byte y;
+    
+    if ((left_climb_alarm_flag == 1) || (right_climb_alarm_flag == 1) || 
+        ((gl_local_dk_status | !gl_control_dk_status) == 1)) {
+        for (y = 0; y < 13; y++) {
+            AlarmDetailInfo.StaticBaseValue[y] = ad_chn_base[y].base;
+            AlarmDetailInfo.InstantSampleValue[y] = ad_chn_sample[y];
+        }
+    }
+        
+    AlarmDetailInfo.DoorKeepAlarm = (Byte)(gl_local_dk_status | !gl_control_dk_status);
+    AlarmDetailInfo.StaticAlarm   = ad_alarm_base;
+    AlarmDetailInfo.ExternalAlarm = ad_alarm_exts;
 }

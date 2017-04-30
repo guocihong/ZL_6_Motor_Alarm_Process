@@ -74,4 +74,13 @@ typedef struct strUART_Q
 #define Enable_interrupt()  (EA = 1)
 #define Disable_interrupt() (EA = 0)
 
+//2016-02-28新增
+typedef struct strAlarmDetailInfo
+{
+    Uint16  InstantSampleValue[13];//瞬间张力:左1~6、右1~6、杆自身
+    Uint16  StaticBaseValue[13];   //静态基准:左1~6、右1~6、杆自身
+    Uint16  ExternalAlarm;         //外力报警:杆自身、左开关量、左6~左1,杆自身、右开关量、右6~右1            
+    Uint16  StaticAlarm;	       //静态报警:杆自身、左开关量、左6~左1,杆自身、右开关量、右6~右1                               					
+    Byte    DoorKeepAlarm;         //门磁报警:!控制杆门磁 | 防水箱门磁
+}sAlarmDetailInfo;
 #endif

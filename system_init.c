@@ -17,6 +17,8 @@ extern xdata  Uint16      ad_sensor_mask_LR;           //按左右顺序重排序的senso
 extern xdata  Uint16      ad_sensor_mask;              //15  14  13  12  11  10  9  8  7   6   5  4  3  2  1  0
 											           //				右6			      右1 左6       	 左1	
 
+extern xdata  Byte        alarm_point_num;             //报警点数-->连续多少个点报警才判定为报警
+
 extern xdata  Uint16      ad_still_dn;                 //静态拉力值下限
 extern xdata  Uint16      ad_still_up;                 //静态拉力值上限
 extern xdata  Byte        ad_still_Dup[13];            //报警阀值上限
@@ -310,6 +312,14 @@ static void get_config_info(void)
         gl_reply_tick = flash_read(EEPROM_SECTOR10 + 1);
     } else {	//无有效设置
         gl_reply_tick = 0;
+    }
+   
+    //读取报警点数-->连续多少个点报警才判定为报警
+    temp = flash_read(EEPROM_SECTOR11);
+    if (temp == 0x5A) { //有有效设置
+        alarm_point_num = flash_read(EEPROM_SECTOR11 + 1);
+    } else {	//无有效设置
+        alarm_point_num = 6;
     }
     
 	//禁止Flash访问

@@ -45,7 +45,7 @@
             <InvalidFlash>1</InvalidFlash>
           </TargetStatus>
           <OutputDirectory>.\Objects\</OutputDirectory>
-          <OutputName>ZL_6_Motor_Alarm_Process</OutputName>
+          <OutputName>6道电机防水箱主程序-受力杆攀爬报警-带可设置延时-设置报警点数</OutputName>
           <CreateExecutable>1</CreateExecutable>
           <CreateLib>0</CreateLib>
           <CreateHexFile>1</CreateHexFile>

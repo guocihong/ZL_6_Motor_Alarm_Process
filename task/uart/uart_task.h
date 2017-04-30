@@ -32,4 +32,6 @@ Byte uart3_get_send_buffer(void);
 
 Byte uart4_get_recv_buffer(void);
 Byte uart4_get_send_buffer(void);
+
+void get_alarm_detail_info(void);
 #endif
